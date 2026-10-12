@@ -111,6 +111,7 @@ function runRound(topics) {
     const cleared = round - 1;
     const best = cleared > save.stats.roundBest;
     if (best) save.stats.roundBest = cleared;
+    missionEvent('round', cleared);
     persist();
     resultScreen({ icon: '🏆', title: '라운드전 결과', lines: [`클리어한 라운드: <b>${cleared}</b>`, `맞힌 문제: <b>${correct}</b>개`, best ? '🎉 <b>새 최고 기록!</b>' : `내 최고 기록: ${save.stats.roundBest}라운드`], again: () => runRound(topics) });
   };
@@ -160,6 +161,7 @@ function runSpeed(topics) {
       stopModeTimer(); inStage = false;
       const best = score > save.stats.speedBest;
       if (best) save.stats.speedBest = score;
+      missionEvent('speed', score);
       reward({ xp: correct * 6, coins: Math.floor(score / 20) });
       persist();
       resultScreen({ icon: '⏱️', title: '스피드 퀴즈 결과',
@@ -518,6 +520,7 @@ function runMemory() {
     const coins = Math.max(3, 15 - Math.max(0, moves - 6) * 1);
     const best = !save.stats.memoryBest || moves < save.stats.memoryBest;
     if (best) save.stats.memoryBest = moves;
+    missionEvent('memory');
     reward({ xp: 20, coins });
     persist();
     resultScreen({ icon: '🃏', title: '기억력 카드 완료!',

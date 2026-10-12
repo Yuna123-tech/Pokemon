@@ -181,6 +181,14 @@ function renderCenter() {
         stat('체육관 배지', `${Object.keys(save.cleared).filter(k => k !== '6').length}/5`),
         stat('라운드전 최고', `${s.roundBest}라운드`), stat('스피드 최고', `${s.speedBest}점`),
         stat('대결 승리', `${s.duelWins}번`), stat('모은 코인', `${s.totalCoins}`)),
+      h('div', { class: 'row-btns' },
+        h('button', { class: 'btn small', onclick: () => { exportProfile(); toast('💾 기록 파일을 내려받았어요. 잘 보관해요!'); } }, '💾 내 기록 파일로 저장'),
+        (() => {
+          const inp = h('input', { type: 'file', accept: '.json,application/json', class: 'hidden' });
+          inp.addEventListener('change', () => { if (inp.files[0]) importProfile(inp.files[0], () => renderCenter()); });
+          return h('label', { class: 'btn small file-btn' }, '📂 기록 파일 불러오기', inp);
+        })()),
+      h('p', { class: 'muted' }, '💡 다른 컴퓨터로 옮기거나 기록이 지워질 때를 대비해 파일로 저장해 둘 수 있어요. (인터넷으로 보내지 않아요)'),
       h('details', { class: 'record-code' },
         h('summary', null, '📤 선생님께 보낼 기록 코드'),
         h('p', { class: 'muted' }, '선생님이 요청하면 아래 코드를 보여 주세요. (선생님만 우리 반 랭킹을 볼 수 있어요)'),

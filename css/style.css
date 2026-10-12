@@ -779,3 +779,95 @@ b { font-weight: 900; }
   .coin-chip { font-size: .85rem; padding: 2px 8px; }
   #topbar-title { font-size: 1rem; }
 }
+
+/* =========================================================
+   v3: 직접 그린 SVG 지도 (바닥 + 위로 솟는 그림 레이어)
+   ========================================================= */
+.world { background: #222; }
+.world .tile { position: relative; overflow: hidden; background: none !important; box-shadow: none !important; }
+.world .tile > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.world .tile:hover::after { content: ''; position: absolute; inset: 2px; border: 2px dashed rgba(255,255,255,.85); border-radius: 6px; }
+.world .tile.blocked:hover::after { display: none; }
+.obj {
+  position: absolute; left: 0; top: 0; width: var(--t); height: calc(var(--t) * 1.625); pointer-events: none;
+  transform: translate(calc(var(--x) * var(--t)), calc((var(--y) + 1) * var(--t) - var(--t) * 1.625));
+}
+.obj > svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.obj .b-icon { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); font-size: calc(var(--t) * .42); filter: drop-shadow(0 1px 0 #fff); animation: hop 2.4s ease-in-out infinite; }
+.obj .tile-label { bottom: -4px; }
+.obj .exit-label { background: #e3f2fd; border-color: #1565c0; color: #0d47a1; }
+.obj-tree > svg { transform-origin: 50% 90%; animation: treeSway 5s ease-in-out infinite; }
+.obj-tree:nth-child(3n) > svg { animation-delay: -2s; }
+@keyframes treeSway { 50% { transform: rotate(1.4deg); } }
+.world .sway { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 2.6s ease-in-out infinite; }
+.world .wave { animation: waveMove 3s ease-in-out infinite; }
+@keyframes waveMove { 50% { transform: translateX(2px); } }
+.world .smoke { animation: smoke 3s ease-in-out infinite; }
+@keyframes smoke { 0% { transform: translateY(2px); opacity: .9; } 100% { transform: translateY(-6px); opacity: .2; } }
+.world .bubble { animation: blink 1.6s infinite; }
+.player { transition: transform .15s linear; }
+.player-shadow { position: absolute; left: 18%; right: 18%; bottom: 4%; height: 18%; background: rgba(0,0,0,.28); border-radius: 50%; }
+.player-img { position: relative; }
+.map-title { display: inline-block; font-family: var(--font-title); font-size: 1.25rem; background: var(--navy); color: #fff; border: 3px solid #222; border-radius: 999px; padding: 2px 16px; margin: 0 0 6px; }
+.world-screen { text-align: left; }
+.wild-park { background: linear-gradient(180deg, #e8f5e9, #a5d6a7); }
+.wild-factory { background: linear-gradient(180deg, #d1c4e9, #6d6875); }
+.trace-emoji { font-size: 6rem; line-height: 1.1; }
+.world-school, .world-town, .world-park { box-shadow: var(--shadow); }
+
+/* ---------- 날씨 · 밤 ---------- */
+.weather { position: absolute; inset: 0; pointer-events: none; z-index: 400; }
+.weather.w-cloudy { background: radial-gradient(ellipse 30% 18% at 20% 30%, rgba(0,0,0,.14), transparent 70%), radial-gradient(ellipse 35% 20% at 70% 65%, rgba(0,0,0,.12), transparent 70%); background-size: 200% 100%; animation: clouds 30s linear infinite; }
+@keyframes clouds { to { background-position: -200% 0, -150% 0; } }
+.weather.w-rain { background: linear-gradient(rgba(40,60,90,.18), rgba(40,60,90,.18)), repeating-linear-gradient(105deg, transparent 0 14px, rgba(220,235,255,.55) 14px 15px, transparent 15px 30px); background-size: 100% 100%, 60px 60px; animation: rain .5s linear infinite; }
+@keyframes rain { to { background-position: 0 0, -16px 60px; } }
+.weather.w-sunny { background: radial-gradient(circle at 92% 6%, rgba(255,245,180,.45), transparent 40%); }
+.weather.night { box-shadow: inset 0 0 0 2000px rgba(15,25,70,.42); }
+.weather.night.wmap-wetland, .weather.night.wmap-mountain, .weather.night.wmap-forest {
+  background-image: radial-gradient(circle at 20% 40%, #ffff8d 0 2px, transparent 4px), radial-gradient(circle at 65% 70%, #ffff8d 0 2px, transparent 4px), radial-gradient(circle at 80% 25%, #ffff8d 0 2px, transparent 4px);
+  animation: fireflies 3s ease-in-out infinite alternate;
+}
+@keyframes fireflies { to { background-position: 10px -12px, -14px 8px, 6px 10px; opacity: .6; } }
+.map-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+.map-bar .map-title { margin: 0; }
+.weather-chip, .mission-chip { border: 3px solid #222; border-radius: 999px; background: #fff; padding: 2px 12px; font-weight: 900; font-size: .95rem; box-shadow: 0 2px 0 #222; }
+.mission-chip { background: var(--yellow); animation: shine 2.4s infinite; }
+
+/* ---------- 따라다니는 파트너 ---------- */
+.world-wrap { position: relative; }
+.buddy { position: absolute; right: 6px; bottom: 6px; z-index: 600; display: flex; align-items: flex-end; gap: 4px; pointer-events: none; max-width: 70%; }
+.buddy-bubble { background: #fff; border: 3px solid #222; border-radius: 14px 14px 2px 14px; padding: 6px 10px; font-size: .85rem; font-weight: 700; box-shadow: 0 3px 0 #222; max-width: 260px; animation: popIn .3s ease; }
+.buddy-body { position: relative; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
+.buddy-poke { width: 74px; height: 74px; border-radius: 50%; border: 3px solid #222; background: radial-gradient(circle at 50% 40%, #fff, #ffe082); padding: 4px; box-shadow: 0 3px 0 #222; animation: hop 2s ease-in-out infinite; }
+.buddy-poke:active { transform: scale(.92); }
+.buddy-img { width: 100%; height: 100%; }
+.buddy-love { font-size: .8rem; font-weight: 900; background: #fff; border: 2px solid #222; border-radius: 999px; padding: 0 6px; margin-top: 2px; }
+.buddy-hearts { position: absolute; top: 0; left: 50%; }
+.heart-pop { position: absolute; font-size: 1.4rem; animation: popUp .9s ease forwards; transform: translate(-50%, 0); }
+
+/* ---------- 미션 ---------- */
+.mission-row { display: flex; align-items: center; gap: 10px; background: #fff; border: 3px solid #222; border-radius: 14px; padding: 8px 12px; margin: 8px 0; }
+.mission-row.done { background: #fff8e1; box-shadow: 0 0 0 3px var(--yellow); }
+.mission-row.claimed { opacity: .65; }
+.mission-text { flex: 1; }
+.file-btn { cursor: pointer; display: inline-block; }
+
+/* ---------- 몬스터볼 잡기 ---------- */
+.wild-arena { position: relative; overflow: hidden; }
+.catching .wild-img { animation: intoBall .6s ease-in .35s forwards; }
+@keyframes intoBall { to { transform: scale(0); opacity: 0; filter: brightness(4); } }
+.catch-ball {
+  position: absolute; left: calc(50% - 22px); top: 30%; width: 44px; height: 44px; border-radius: 50%; border: 4px solid #222;
+  background: linear-gradient(180deg, var(--red) 0 44%, #222 44% 56%, #fff 56%);
+  animation: ballIn .45s ease-out, ballShake .3s ease-in-out .7s 3; transform-origin: 50% 90%;
+}
+@keyframes ballIn { from { transform: translate(-120px, 120px) rotate(-360deg) scale(.6); } }
+@keyframes ballShake { 25% { transform: rotate(-18deg); } 75% { transform: rotate(18deg); } }
+.catch-stars { position: absolute; left: 0; right: 0; top: 12%; text-align: center; font-family: var(--font-title); font-size: 1.6rem; color: #fff; -webkit-text-stroke: 1px #222; animation: popIn .4s ease; }
+@media (max-width: 600px) {
+  .world-wrap { flex-direction: column; align-items: center; }
+  .buddy { position: static; max-width: 100%; margin-top: 6px; flex-direction: row-reverse; justify-content: center; }
+  .buddy-poke { width: 54px; height: 54px; }
+  .buddy-bubble { font-size: .78rem; border-radius: 14px 14px 14px 2px; }
+}
+.world .tile > svg { inset: -.5px; width: calc(100% + 1px); height: calc(100% + 1px); }

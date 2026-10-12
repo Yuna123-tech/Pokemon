@@ -231,6 +231,7 @@ function registerDex(id) {
   const c = CREATURES[id];
   if (!save || !c || !c.living || !c.poke || save.dex.includes(id)) return false;
   save.dex.push(id); persist();
+  missionEvent('dex');
   return true;
 }
 function dexView() {
@@ -331,7 +332,7 @@ function coinsLeftToday() {
 }
 function countAnswer(ok) {
   if (!save) return;
-  save.stats.answered++; if (ok) save.stats.correct++;
+  save.stats.answered++; if (ok) { save.stats.correct++; missionEvent('correct'); }
 }
 
 // 쌓인 레벨업/진화 알림을 차례로 보여 줘요
@@ -466,4 +467,116 @@ function readRecordCode(name, code) {
   const n = body.split('.').map(x => parseInt(x, 36));
   if (n.length !== 10 || n.some(isNaN)) return null;
   return { name, lv: n[0], dex: n[1], stars: n[2], correct: n[3], answered: n[4], round: n[5], speed: n[6], duel: n[7], coins: n[8], poke: n[9] };
+}
+
+/* =========================================================
+   📜 오늘의 미션 (매일 3개, 이 기기에만 저장)
+   ========================================================= */
+const MISSION_POOL = [
+  { id: 'producer', text: '야생에서 생산자 3마리 만나기', goal: 3, ev: 'meet-producer', coins: 25 },
+  { id: 'consumer', text: '야생에서 소비자 5마리 만나기', goal: 5, ev: 'meet-consumer', coins: 25 },
+  { id: 'decomposer', text: '야생에서 분해자 1마리 만나기 (버섯·곰팡이)', goal: 1, ev: 'meet-decomposer', coins: 25 },
+  { id: 'clean', text: '공장 지대의 오염 2곳 정화하기', goal: 2, ev: 'clean', coins: 30 },
+  { id: 'trash', text: '해변·섬에서 쓰레기 3개 줍기', goal: 3, ev: 'trash', coins: 25 },
+  { id: 'trace', text: '흔적 공원에서 동물 흔적 2개 추리하기', goal: 2, ev: 'trace', coins: 25 },
+  { id: 'correct', text: '아무 게임에서나 문제 15개 맞히기', goal: 15, ev: 'correct', coins: 30 },
+  { id: 'round', text: '라운드전에서 3라운드 이상 클리어', goal: 3, ev: 'round', mode: 'max', coins: 30 },
+  { id: 'speed', text: '스피드 퀴즈에서 100점 이상', goal: 100, ev: 'speed', mode: 'max', coins: 30 },
+  { id: 'memory', text: '기억력 카드 1판 완성', goal: 1, ev: 'memory', coins: 20 },
+  { id: 'visit', text: '서로 다른 지역 4곳 방문하기', goal: 4, ev: 'visit', mode: 'unique', coins: 20 },
+  { id: 'dex', text: '도감에 새 생물 2마리 등록하기', goal: 2, ev: 'dex', coins: 30 },
+];
+function ensureMissions() {
+  if (!save) return [];
+  if (!save.missions || save.missions.date !== todayStr()) {
+    // 날짜와 이름으로 정해지는 3개 (같은 날엔 같은 미션)
+    const seed = fnv(todayStr() + save.name);
+    const pool = MISSION_POOL.slice().sort((a, b) => (fnv(a.id + seed) % 997) - (fnv(b.id + seed) % 997));
+    save.missions = { date: todayStr(), list: pool.slice(0, 3).map(m => ({ id: m.id, prog: 0, seen: [], claimed: false })), bonus: false };
+    persist();
+  }
+  return save.missions.list;
+}
+function missionEvent(ev, value = 1, key = null) {
+  if (!save) return;
+  ensureMissions().forEach(st => {
+    const m = MISSION_POOL.find(x => x.id === st.id);
+    if (!m || m.ev !== ev || st.prog >= m.goal) return;
+    if (m.mode === 'max') st.prog = Math.max(st.prog, value);
+    else if (m.mode === 'unique') { if (key && !st.seen.includes(key)) { st.seen.push(key); st.prog = st.seen.length; } }
+    else st.prog += value;
+    if (st.prog >= m.goal) { st.prog = m.goal; setTimeout(() => { sfx.level(); toast(`📜 미션 완료! 「${m.text}」 — 미션 창에서 보상을 받아요`, 2600); }, 400); }
+  });
+  persist();
+}
+function missionsView() {
+  const list = ensureMissions();
+  const all = list.every(st => st.claimed);
+  const box = h('div', null, h('h2', null, '📜 오늘의 미션'), h('p', { class: 'muted' }, '매일 새로운 미션 3개가 나와요. 다 하면 보너스 선물!'));
+  list.forEach(st => {
+    const m = MISSION_POOL.find(x => x.id === st.id);
+    const done = st.prog >= m.goal;
+    box.appendChild(h('div', { class: `mission-row ${st.claimed ? 'claimed' : done ? 'done' : ''}` },
+      h('div', { class: 'mission-text' }, h('b', null, m.text), h('div', { class: 'xp-bar' }, h('div', { class: 'xp-fill', style: { width: Math.round(st.prog / m.goal * 100) + '%' } })),
+        h('span', { class: 'muted' }, `${st.prog} / ${m.goal}`)),
+      st.claimed ? h('span', { class: 'chip' }, '✅ 받음')
+        : h('button', { class: 'btn small primary', disabled: done ? null : 'disabled', onclick: () => {
+          st.claimed = true; reward({ coins: m.coins, xp: 20, bypassCap: true }); sfx.catch();
+          toast(`🎁 미션 보상 🪙${m.coins}!`); openModal(missionsView()); flushEvents();
+        } }, `🪙 ${m.coins}`)));
+  });
+  if (all && !save.missions.bonus) {
+    box.appendChild(h('button', { class: 'btn primary big', onclick: () => {
+      save.missions.bonus = true; save.items.candy++; persist(); sfx.clear(); toast('🍭 모든 미션 완료! 이상한 사탕을 받았어요!', 2500); openModal(missionsView());
+    } }, '🎁 보너스 선물 받기 (이상한 사탕)'));
+  } else if (save.missions.bonus) box.appendChild(h('p', { class: 'center big-text' }, '🎉 오늘 미션 모두 완료! 내일 또 만나요.'));
+  return box;
+}
+
+/* =========================================================
+   🌦️ 날씨 · 낮과 밤 (비생물 요소가 생물에게 영향을 줘요)
+   ========================================================= */
+function weatherOf(map) {
+  const v = fnv(`${todayStr()}|${map}|${new Date().getHours() >> 2}`) % 10;
+  return v < 5 ? 'sunny' : v < 8 ? 'cloudy' : 'rain';
+}
+const WEATHER_INFO = {
+  sunny:  { icon: '☀️', name: '맑음', tip: '햇빛이 쨍쨍! 식물(생산자)이 양분을 만들기 좋은 날이에요.' },
+  cloudy: { icon: '⛅', name: '구름', tip: '구름이 햇빛을 가렸어요. 햇빛도 생태계를 이루는 비생물 요소예요.' },
+  rain:   { icon: '🌧️', name: '비', tip: '비가 와요! 물을 좋아하는 개구리·달팽이·올챙이가 더 자주 나타나요. 비생물 요소(물)가 생물에게 영향을 줘요.' },
+};
+function isNight() { const hr = new Date().getHours(); return hr >= 19 || hr < 6; }
+const RAIN_LOVERS = ['frog', 'snail', 'snail2', 'tadpole', 'loach', 'mushroom', 'mold'];
+const NIGHT_LOVERS = ['owl', 'raccoon', 'firefly', 'catfish'];
+// 날씨와 시간에 따라 야생 생물 고르기
+function pickWild(map) {
+  const pool = MAPS[map].pool.slice();
+  const w = weatherOf(map);
+  const bag = pool.slice();
+  if (w === 'rain') pool.filter(id => RAIN_LOVERS.includes(id)).forEach(id => bag.push(id, id, id));
+  if (isNight()) pool.filter(id => NIGHT_LOVERS.includes(id)).forEach(id => bag.push(id, id, id));
+  return pick(bag);
+}
+
+/* ---------- 💾 기록 파일 저장 · 불러오기 (내 컴퓨터에만) ---------- */
+function exportProfile() {
+  const blob = new Blob([JSON.stringify({ app: 'eco-pokemon', version: 3, profile: save }, null, 1)], { type: 'application/json' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: `포켓몬생태계_${save.name}_${todayStr()}.json` });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function importProfile(file, done) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const data = JSON.parse(rd.result);
+      const p = data && data.profile;
+      if (!p || data.app !== 'eco-pokemon' || !p.name || !p.partners) throw new Error('bad');
+      if (store.profiles[p.name] && !confirm(`이 컴퓨터에 있는 「${p.name}」 기록을 파일의 기록으로 바꿀까요?`)) return;
+      store.profiles[p.name] = p; persist();
+      store = loadStore(); device = store.device; selectProfile(p.name);
+      toast(`📂 ${p.name}의 기록을 불러왔어요!`); done && done();
+    } catch (e) { toast('기록 파일을 읽을 수 없어요.'); }
+  };
+  rd.readAsText(file);
 }

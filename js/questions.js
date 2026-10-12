@@ -180,7 +180,76 @@ const AUTHORED_QUESTIONS = [
   QX(5, '생태계를 보전하기 위해서는 많은 사람의 노력이 필요하다.', true, '생태계를 보전하기 위해서는 많은 사람의 노력이 필요해요.', { emoji: '🤝' }),
   QX(5, '황새는 국제적인 멸종 위기종이다.', true, '황새는 전 세계에 3,000여 마리만 사는 국제적인 멸종 위기종이에요.', { emoji: '🪶' }),
   QX(5, '생태통로는 동물이 안전하게 이동할 수 있도록 만든 길이다.', true, '생태통로는 동물이 이동할 수 있도록 만든 길이에요.', { emoji: '🌉' }),
+
+  /* ── 추가 문제 (v3) ── */
+  QM(1, '강 생태계 그림에 나온 <b>반달말</b>(130배 확대)은 생물 요소일까요, 비생물 요소일까요?', '생물 요소', ['비생물 요소'],
+    '반달말은 눈으로 보기 어려울 만큼 작지만 살아 있는 <b>생물 요소</b>예요. 크기가 작아도 생물이에요.', { emoji: '🔬' }),
+  QX(1, '현미경으로 봐야 보일 만큼 작은 곰팡이도 생물 요소이다.', true, '곰팡이(160배 확대)처럼 아주 작아도 살아 있으면 생물 요소예요.', { creature: 'mold' }),
+  QX(1, '흙 속에는 생물이 전혀 살지 않는다.', false, '흙 속에는 두더지, 지렁이처럼 많은 생물이 살아요. 흙은 비생물 요소지만 생물의 보금자리예요.', { creature: 'mole' }),
+  QX(1, '생물 요소는 비생물 요소 없이도 살아갈 수 있다.', false, '생물은 햇빛, 물, 공기, 흙 같은 비생물 요소의 영향을 받으며 살아가요.', { emoji: '🌞' }),
+  QM(1, '우리 주변에서 찾을 수 있는 <b>생물 요소와 비생물 요소</b>를 바르게 짝 지은 것은?', '생물: 개미 / 비생물: 돌', ['생물: 돌 / 비생물: 개미', '생물: 햇빛 / 비생물: 나무', '생물: 공기 / 비생물: 꽃'],
+    '개미는 살아 있는 생물 요소, 돌은 살아 있지 않은 비생물 요소예요.', { creature: 'ant' }),
+  QM(2, '애벌레가 갉아 먹는 나뭇잎을 만든 생물은 생태계에서 어떤 역할을 할까요?', '생산자', ['소비자', '분해자'],
+    '나뭇잎을 만드는 나무는 햇빛 등을 이용해 스스로 양분을 만드는 <b>생산자</b>예요.', { creature: 'caterpillar' }),
+  QM(2, '숲에 떨어진 낙엽과 동물의 배출물이 시간이 지나면 없어지는 까닭은?', '분해자가 분해하기 때문이에요.', ['생산자가 먹기 때문이에요.', '햇빛이 녹이기 때문이에요.'],
+    '버섯, 곰팡이, 일부 세균 같은 <b>분해자</b>가 죽은 생물체나 배출물을 분해해요.', { creature: 'mushroom' }),
+  QM(2, '생태계에서 <b>생산자가 모두 사라지면</b> 어떻게 될까요?', '소비자도 먹이가 없어져 살기 어려워요.', ['소비자가 더 많아져요.', '아무 변화가 없어요.'],
+    '소비자는 생산자나 다른 소비자를 먹고 살아요. 생산자가 사라지면 결국 모든 소비자가 살기 어려워요.', { creature: 'grass' }),
+  QX(2, '소비자는 햇빛을 이용해 스스로 양분을 만들 수 있다.', false, '스스로 양분을 만드는 것은 <b>생산자</b>예요. 소비자는 다른 생물을 먹어요.', { creature: 'rabbit' }),
+  QX(2, '분해자 덕분에 죽은 생물의 양분이 다시 다른 생물에게 이용된다.', true, '분해자는 죽은 생물체를 분해해 다른 생물이 이용할 수 있게 해요.', { creature: 'mold' }),
+  QM(3, '먹이사슬과 먹이그물의 공통점은?', '생물 사이의 먹고 먹히는 관계를 나타내요.', ['비생물 요소만 나타내요.', '생물의 크기 순서를 나타내요.'],
+    '먹이사슬과 먹이그물은 모두 <b>먹고 먹히는 관계</b>를 나타내요. 먹이그물은 여러 먹이사슬이 얽힌 것이에요.', { emoji: '🔗' }),
+  QM(3, '먹이 관계가 <b>단순할수록</b> 생태계는 어떻게 될까요?', '한 생물이 사라지면 생태계가 쉽게 불안정해져요.', ['어떤 생물이 사라져도 끄떡없어요.', '생물이 저절로 늘어나요.'],
+    '단순한 먹이 관계에서는 한 생물이 사라지면 그 생물을 먹던 생물이 먹을 것이 없어져 생태계가 불안정해져요.', { emoji: '⛓️' }),
+  QX(3, '메뚜기는 풀을 먹는다.', true, '메뚜기는 풀을 먹고, 개구리는 메뚜기를 먹어요.', { creature: 'grasshopper' }),
+  QX(3, '개구리는 매를 잡아먹는다.', false, '매가 개구리를 잡아먹어요. 화살표는 개구리 ➜ 매 방향이에요.', { creature: 'frog' }),
+  QX(3, '먹이사슬은 보통 생산자에서 시작한다.', true, '먹이사슬은 스스로 양분을 만드는 생산자에서 시작해요.', { creature: 'clover' }),
+  QM(4, '환경오염의 원인이 되는 인간 활동이 <b>아닌</b> 것은?', '나무를 심고 가꾸기', ['쓰레기 배출', '농약의 지나친 사용', '공장 폐수 배출'],
+    '나무를 심고 가꾸는 것은 환경을 지키는 활동이에요.', { emoji: '🌳' }),
+  QM(4, '대기오염이 생물에게 주는 영향으로 알맞은 것은?', '해로운 물질 때문에 여러 가지 질병이 생길 수 있어요.', ['숨쉬기가 더 편해져요.', '식물이 더 잘 자라요.'],
+    '오염된 공기 속 해로운 물질은 생물에게 여러 가지 질병을 일으킬 수 있어요.', { poke: 109, emoji: '🌫️' }),
+  QX(4, '플라스틱을 과도하게 사용하면 대기오염, 수질오염, 토양오염이 모두 생길 수 있다.', true,
+    '플라스틱을 태우면 대기오염, 미세 플라스틱은 수질오염, 썩지 않는 플라스틱은 토양오염을 일으켜요. (과학 51쪽)', { emoji: '🧴' }),
+  QX(4, '환경이 오염되어도 생물의 서식지는 그대로 유지된다.', false, '환경이 오염되면 서식지가 파괴되고 생물의 종류와 수가 줄어들 수 있어요.', { poke: 89, emoji: '🏚️' }),
+  QX(4, '쓰레기를 많이 버리는 것은 환경오염의 원인이 될 수 있다.', true, '쓰레기 배출은 환경오염의 원인이에요.', { poke: 568, emoji: '🗑️' }),
+  QM(5, '생태계 보전을 위한 활동을 계획할 때 꼭 정해야 할 것은?', '활동 내용과 활동 기간', ['좋아하는 음식', '여행 장소', '게임 점수'],
+    '모둠별로 실천할 활동을 정하고 <b>활동 내용과 활동 기간</b>을 계획해요. (과학 54쪽)', { emoji: '📋' }),
+  QM(5, '생태계 보전을 위해 건의하는 글에 들어가면 좋은 내용은?', '문제 상황과 해결 방법', ['나의 장래 희망', '어제 먹은 음식', '친구의 비밀'],
+    '건의하는 글에는 문제 상황(예: 방음벽에 새가 부딪힘)과 해결 방법(예: 충돌 방지 스티커)을 써요.', { emoji: '✉️' }),
+  QM(5, '우리나라가 황새 복원 연구를 시작한 해는?', '1996년', ['1900년', '1970년', '2020년'],
+    '우리나라에서는 <b>1996년</b>부터 황새 복원 연구를 하였어요.', { creature: 'stork' }),
+  QM(5, '황새는 전 세계적으로 약 몇 마리만 살아 있을까요?', '3,000여 마리', ['30마리', '3만 마리', '300만 마리'],
+    '황새는 전 세계적으로 <b>3,000여 마리</b>만 생존하는 국제적인 멸종 위기종이에요.', { creature: 'stork' }),
+  QM(5, '황새 ‘엔젤’이 24시간 동안 쉬지 않고 날아간 거리는?', '1,200 km', ['12 km', '120 km', '12,000 km'],
+    '엔젤은 24시간 동안 <b>1,200 km</b>를 쉬지 않고 비행해 대만에 도착했어요.', { creature: 'stork' }),
+  QM(5, '우리 주변에 사는 생물을 찾고 기록할 때 활용할 수 있는 것은?', '생물을 기록하는 애플리케이션이나 누리집', ['게임 아이템', '일기 예보', '택배 앱'],
+    '‘생물 탐사’, ‘생물다양성’ 등을 검색해 주변 생물을 기록하는 애플리케이션이나 누리집을 활용해요.', { emoji: '📱' }),
+  QM(5, '촬영된 생물 관련 자료를 찾을 수 있는 곳으로 교과서에 소개된 기관은?', '국립생물자원관', ['기상청', '우체국', '소방서'],
+    '<b>국립생물자원관</b>에서 촬영된 생물 관련 자료를 찾을 수 있어요.', { emoji: '🏛️' }),
+  QX(5, '에너지를 절약하는 것도 생태계 보전에 도움이 된다.', true, '에너지를 절약하면 환경을 보호하고 생태계를 보전하는 데 도움을 줄 수 있어요.', { emoji: '💡' }),
+  QX(5, '생태계 보전은 국가에서만 할 수 있는 일이다.', false, '국가와 사회뿐 아니라 우리도 일회용품 줄이기, 에너지 절약 등으로 생태계를 보전할 수 있어요.', { emoji: '🙋' }),
+  QX(5, '반달가슴곰, 돌고래, 바다거북 같은 야생 동물도 위치 추적기로 연구하고 보호할 수 있다.', true,
+    '위치 추적기로 황새뿐만 아니라 반달가슴곰, 돌고래, 바다거북의 생태적 특성도 파악하고 보호할 수 있어요.', { creature: 'bear' }),
 ];
+
+/* ---------- 동물의 흔적 추리 문제 (과학 38~40쪽 「동물의 흔적을 찾아라!」) ---------- */
+const TRACE_QUESTIONS = [
+  QM(1, '🌰 도토리 껍데기가 잔뜩 흩어져 있어요. 어떤 일이 있었을까요?', '다람쥐 같은 동물이 도토리를 먹었어요.', ['비가 많이 내렸어요.', '흙이 도토리를 만들었어요.'],
+    '흔적을 보면 동물과 환경의 관계를 추리할 수 있어요. 도토리 껍데기는 다람쥐 같은 동물이 먹이를 먹은 흔적이에요.', { emoji: '🌰' }),
+  QM(1, '🐾 물가 진흙에 새 발자국이 찍혀 있어요. 어떤 일이 있었을까요?', '새가 물가에서 먹이를 찾았을 수 있어요.', ['물고기가 걸어 다녔어요.', '바람이 발자국을 만들었어요.'],
+    '물가의 새 발자국을 보면 새가 물가에서 먹이를 찾았다는 것을 추리할 수 있어요.', { emoji: '🐾' }),
+  QM(1, '🍃 나뭇잎에 구멍이 숭숭 뚫려 있어요. 어떤 일이 있었을까요?', '애벌레 같은 곤충이 잎을 갉아 먹었어요.', ['햇빛이 잎을 녹였어요.', '흙이 잎을 먹었어요.'],
+    '잎의 구멍은 애벌레 같은 소비자가 생산자(나무)를 먹은 흔적이에요.', { creature: 'caterpillar' }),
+  QM(1, '⛰️ 땅 위에 흙더미가 길게 솟아 있어요. 어떤 일이 있었을까요?', '두더지가 땅속에 굴을 팠어요.', ['새가 둥지를 지었어요.', '물고기가 헤엄쳤어요.'],
+    '두더지는 땅속에 굴을 파고 살아요. 흙더미는 두더지가 남긴 흔적이에요.', { creature: 'mole' }),
+  QM(1, '🪶 땅에 깃털이 떨어져 있어요. 무엇을 추리할 수 있을까요?', '새가 이곳에 머물렀던 것 같아요.', ['여기에 물고기가 살아요.', '여기에는 생물이 전혀 없어요.'],
+    '깃털은 새가 남긴 흔적이에요. 흔적으로 어떤 동물이 살고 있는지 알 수 있어요.', { emoji: '🪶' }),
+  QM(1, '💩 동물의 똥을 발견했어요. 똥을 관찰하면 무엇을 추리할 수 있을까요?', '그 동물이 무엇을 먹었는지 추리할 수 있어요.', ['내일 날씨를 알 수 있어요.', '동물의 이름표를 알 수 있어요.'],
+    '똥 속에 남은 씨앗이나 털을 보면 동물이 무엇을 먹었는지 추리할 수 있어요. 단, 맨손으로 만지면 안 돼요!', { emoji: '💩' }),
+  QX(1, '동물의 흔적을 관찰할 때는 맨손으로 만지지 않고, 긴 옷을 입는다.', true,
+    '야외 활동을 할 때는 생물에게 쏘이거나 물리지 않게 주의하고, 흔적을 맨손으로 만지지 않아요.', { emoji: '🧤' }),
+];
+
 
 /* ---------- 데이터에서 자동으로 만드는 문제 ---------- */
 // 먹이그물에서 쓰는 이름 (상수리나무 → 도토리)
@@ -190,7 +259,7 @@ function generatedQuestions() {
   const out = [];
   const textbookIds = ['oak', 'squirrel', 'bulbul', 'snake', 'frog', 'beetle', 'mole', 'mushroom', 'mold',
     'waterweed', 'duck', 'heron', 'snail', 'gull', 'dolphin', 'turtle', 'jelly', 'coral', 'crab', 'ray', 'mackerel', 'seaweed',
-    'sun', 'water', 'air', 'soil'];
+    'sun', 'water', 'air', 'soil', 'woodsorrel', 'fleabane', 'ant', 'butterfly', 'stork', 'bear', 'pine', 'clam'];
   // 생물 요소 / 비생물 요소
   textbookIds.forEach(id => {
     const c = CREATURES[id];
@@ -199,9 +268,8 @@ function generatedQuestions() {
       explain: `${c.name}${josa(c.name, '은/는').slice(c.name.length)} ${c.living ? '살아 있는 <b>생물 요소</b>' : '살아 있지 않은 <b>비생물 요소</b>'}예요.`,
       subject: { creature: id } });
   });
-  // 생산자 / 소비자 / 분해자 (교과서에 나온 생물)
-  ['oak', 'squirrel', 'bulbul', 'tit', 'snake', 'frog', 'mushroom', 'mold', 'grass', 'clover', 'cornel', 'grasshopper',
-    'caterpillar', 'rabbit', 'weasel', 'hawk', 'waterweed', 'duck', 'seaweed', 'turtle'].forEach(id => {
+  // 생산자 / 소비자 / 분해자 (마을에서 만나는 모든 생물)
+  Object.keys(CREATURES).filter(id => CREATURES[id].living && CREATURES[id].poke).forEach(id => {
     const c = CREATURES[id]; const r = ROLE_INFO[c.role];
     out.push({ topic: 2, type: 'mcq', q: `<b>${c.name}</b>${josa(c.name, '은/는').slice(c.name.length)} 생태계에서 어떤 역할을 할까요?`,
       choices: ['🌿 생산자', '🍽️ 소비자', '🍄 분해자'], answer: `${r.icon} ${r.label}`,
@@ -240,13 +308,85 @@ function generatedQuestions() {
   });
   // 생태계 보전 행동
   ACTIONS.forEach(a => out.push(QX(5, `“${a.text}” 이 행동은 생태계 보전에 도움이 된다.`, a.good, a.explain, { emoji: a.icon })));
+  const good = ACTIONS.filter(a => a.good), bad = ACTIONS.filter(a => !a.good);
+  good.forEach(a => out.push(QM(5, '다음 중 생태계 보전에 <b>도움이 되는</b> 행동은?', a.text, shuffle(bad).slice(0, 2).map(b => b.text), a.explain, { emoji: a.icon })));
+  bad.forEach(a => out.push(QM(5, '다음 중 생태계에 <b>해가 되는</b> 행동은?', a.text, shuffle(good).slice(0, 2).map(b => b.text), a.explain, { emoji: a.icon })));
+
+  // 교과서 그림 속 생태계 (과학 43~45쪽)
+  Object.entries(HABITAT_LISTS).forEach(([hab, list]) => {
+    const others = Object.entries(HABITAT_LISTS).filter(([k]) => k !== hab).flatMap(([, l]) => l).filter(n => !list.includes(n) && !['매', '오리', '왜가리', '갈매기', '흙', '햇빛', '물', '공기'].includes(n));
+    shuffle(list.filter(n => !['햇빛', '물', '공기', '흙'].includes(n))).slice(0, 4).forEach(ans => {
+      out.push(QM(1, `교과서 <b>${hab} 생태계</b> 그림에서 볼 수 있는 생물은?`, ans, shuffle(others).slice(0, 2),
+        `${ans}${josa(ans, '은/는').slice(ans.length)} ${hab} 생태계를 구성하는 생물 요소예요. ${hab} 생태계: ${list.join(', ')}`, { emoji: { 숲: '🌲', 강: '🏞️', 바다: '🌊' }[hab] }));
+    });
+  });
+
+  // 먹이사슬 순서 맞히기
+  CHAINS.concat([['grass', 'grasshopper', 'frog', 'hawk']]).forEach(chain => {
+    const names = chain.map(webName);
+    const right = names.join(' ➜ ');
+    const wrongs = new Set();
+    while (wrongs.size < 2) { const w = shuffle(names).join(' ➜ '); if (w !== right) wrongs.add(w); }
+    out.push(QM(3, '먹이사슬을 <b>바르게</b> 나타낸 것은? (먹히는 생물 ➜ 먹는 생물)', right, [...wrongs],
+      `먹이사슬은 생산자부터 시작해요: ${right}`, { creature: chain[chain.length - 1] }));
+    // 빈칸 채우기 (모든 자리)
+    chain.forEach((id, i) => {
+      const shown = names.map((n, j) => j === i ? '(    )' : n).join(' ➜ ');
+      const wrong = shuffle(Object.keys(WEB_NODES).filter(x => !chain.includes(x))).slice(0, 2).map(webName);
+      out.push(QM(3, `빈칸에 들어갈 생물은?<br>${shown}`, names[i], wrong, `${right}`, { creature: id }));
+    });
+  });
+
+  // 먹이그물에서 생물이 사라지면? (과학 49쪽 생각 문제, 게임 속 먹이그물 기준)
+  Object.keys(WEB_NODES).forEach(id => {
+    const preds = WEB_EDGES.filter(e => e[0] === id).map(e => e[1]);
+    const prey = WEB_EDGES.filter(e => e[1] === id).map(e => e[0]);
+    const unlinked = Object.keys(WEB_NODES).filter(x => x !== id && !preds.includes(x) && !prey.includes(x));
+    if (preds.length && unlinked.length >= 2)
+      out.push(QM(3, `먹이그물에서 <b>${webName(id)}</b>${josa(webName(id), '이/가').slice(webName(id).length)} 사라지면 <b>먹이가 줄어드는</b> 생물은?`,
+        webName(pick(preds)), shuffle(unlinked).slice(0, 2).map(webName),
+        `${webName(id)}${josa(webName(id), '을/를').slice(webName(id).length)} 먹던 ${preds.map(webName).join(', ')}의 먹이가 줄어들어요.`, { creature: id }));
+    if (prey.length && unlinked.length >= 2)
+      out.push(QM(3, `먹이그물에서 <b>${webName(id)}</b>${josa(webName(id), '이/가').slice(webName(id).length)} 사라지면 잡아먹히지 않아 <b>수가 늘어날 수 있는</b> 생물은?`,
+        webName(pick(prey)), shuffle(unlinked).slice(0, 2).map(webName),
+        `${webName(id)}의 먹이였던 ${prey.map(webName).join(', ')}${josa(prey.map(webName).slice(-1)[0], '은/는').slice(-1)} 잡아먹히지 않아 늘어날 수 있어요.`, { creature: id }));
+  });
+
+  // 역할끼리 짝 짓기 / 아닌 것 고르기
+  const byRole = r => Object.keys(CREATURES).filter(id => CREATURES[id].role === r).map(id => CREATURES[id].name);
+  const P = byRole('producer'), C = byRole('consumer'), D = byRole('decomposer');
+  for (let i = 0; i < 6; i++) {
+    const [p1, p2] = shuffle(P), [c1, c2] = shuffle(C), d1 = pick(D);
+    out.push(QM(2, '다음 중 <b>생산자</b>끼리 짝 지은 것은?', `${p1}, ${p2}`, [`${p1}, ${c1}`, `${c2}, ${d1}`],
+      `${p1}${josa(p1, '와/과').slice(p1.length)} ${p2}${josa(p2, '은/는').slice(p2.length)} 햇빛 등을 이용해 스스로 양분을 만드는 생산자예요.`, { emoji: '🌿' }));
+    out.push(QM(2, '다음 중 <b>소비자</b>끼리 짝 지은 것은?', `${c1}, ${c2}`, [`${c1}, ${p1}`, `${p2}, ${d1}`],
+      `${c1}${josa(c1, '와/과').slice(c1.length)} ${c2}${josa(c2, '은/는').slice(c2.length)} 다른 생물을 먹이로 하여 살아가는 소비자예요.`, { emoji: '🍽️' }));
+    out.push(QM(2, '다음 중 <b>소비자가 아닌</b> 것은?', p1, shuffle(C).slice(0, 3),
+      `${p1}${josa(p1, '은/는').slice(p1.length)} 생산자예요. 나머지는 모두 소비자예요.`, { emoji: '🔍' }));
+  }
+
+  // 오염 종류별 원인 고르기
+  ['air', 'water', 'soil'].forEach(type => {
+    const mon = POLLUTION_MONSTERS[type];
+    POLLUTION_CASES.filter(c => c.type === type).forEach(c => {
+      const wrong = shuffle(POLLUTION_CASES.filter(x => x.type !== type)).slice(0, 2).map(x => x.title);
+      out.push(QM(4, `다음 중 <b>${mon.label}</b>의 원인은?`, c.title, wrong, `${c.title}: ${c.explain}`, { poke: mon.poke, emoji: mon.icon }));
+    });
+  });
   return out;
 }
+
+/* 교과서 숲·강·바다 생태계 그림에 나온 구성 요소 (과학 43~45쪽) */
+const HABITAT_LISTS = {
+  숲: ['상수리나무', '직박구리', '다람쥐', '흙', '뱀', '무당개구리', '버섯', '곰팡이', '사슴벌레', '두더지', '지렁이'],
+  강: ['햇빛', '공기', '매', '부들', '왜가리', '오리', '반달말', '물', '붕어마름', '흙', '다슬기'],
+  바다: ['햇빛', '갈매기', '공기', '돌고래', '물', '바다거북', '해파리', '톳', '산호', '고등어', '미역', '흙', '가오리', '게'],
+};
 
 /* ---------- 문제 꺼내기 ----------
    getQuestions({ topics: [1,2], count: 10, types: ['mcq','ox'] }) */
 function getQuestions({ topics = [1, 2, 3, 4, 5], count = 10, types = null } = {}) {
-  let pool = AUTHORED_QUESTIONS.concat(generatedQuestions()).filter(q => topics.includes(q.topic));
+  let pool = AUTHORED_QUESTIONS.concat(TRACE_QUESTIONS, generatedQuestions()).filter(q => topics.includes(q.topic));
   if (types) pool = pool.filter(q => types.includes(q.type));
   pool = shuffle(pool);
   const out = [];
@@ -256,5 +396,5 @@ function getQuestions({ topics = [1, 2, 3, 4, 5], count = 10, types = null } = {
   return out.map(q => Object.assign({}, q, { choices: q.shuffle ? shuffle(q.choices) : q.choices.slice() }));
 }
 function questionCount(topics) {
-  return AUTHORED_QUESTIONS.concat(generatedQuestions()).filter(q => topics.includes(q.topic)).length;
+  return AUTHORED_QUESTIONS.concat(TRACE_QUESTIONS, generatedQuestions()).filter(q => topics.includes(q.topic)).length;
 }
