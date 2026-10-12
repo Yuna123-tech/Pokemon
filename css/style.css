@@ -892,3 +892,95 @@ b { font-weight: 900; }
 .world-wrap { flex-direction: column; align-items: center; }
 .buddy { position: static; max-width: 100%; margin-top: 6px; flex-direction: row-reverse; justify-content: center; pointer-events: auto; }
 .buddy-bubble { border-radius: 14px 14px 14px 2px; max-width: 520px; }
+
+/* ---------- 포켓몬 상자 · 진화 단계 ---------- */
+.box-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 420px; overflow-y: auto; padding: 4px; }
+.box-cell { background: #fff; border: 3px solid #222; border-radius: 12px; padding: 4px; font-weight: 700; font-size: .85rem; box-shadow: 0 3px 0 #222; }
+.box-img { width: 64px; height: 64px; margin: 0 auto; }
+.box-candy { font-size: .75rem; color: #8b5a00; }
+.box-candy.done { color: var(--green); }
+.evo-tree { display: flex; justify-content: center; overflow-x: auto; padding: 6px; background: #f5f9ff; border: 2px dashed #90caf9; border-radius: 14px; }
+.evo-branch { display: flex; align-items: center; gap: 4px; }
+.evo-kids { display: flex; flex-direction: column; gap: 6px; }
+.evo-arrow { font-size: 1.4rem; font-weight: 900; color: var(--blue); }
+.evo-node { width: 86px; text-align: center; font-weight: 700; font-size: .85rem; background: #fff; border: 2px solid #222; border-radius: 12px; padding: 4px; }
+.evo-node.unknown .evo-node-img { filter: brightness(0) opacity(.35); }
+.evo-node.current { box-shadow: 0 0 0 3px var(--yellow); }
+.evo-node-img { width: 60px; height: 60px; margin: 0 auto; }
+
+/* =========================================================
+   놀이 광장 게임
+   ========================================================= */
+/* 분류 두더지 */
+.whack-rule { text-align: center; font-family: var(--font-title); font-size: 1.6rem; background: var(--yellow); border: 4px solid #222; border-radius: 16px; padding: 6px; margin-bottom: 10px; }
+.whack-rule.flash { animation: popIn .5s ease; }
+.whack-field { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: linear-gradient(180deg, #9ccc65, #689f38); border: 4px solid #222; border-radius: 18px; padding: 14px; }
+.hole { position: relative; aspect-ratio: 1.15; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+.hole-dirt { position: absolute; bottom: 4%; left: 6%; right: 6%; height: 30%; background: radial-gradient(ellipse at 50% 40%, #3e2723 0 55%, #5d4037 56% 70%, transparent 71%); z-index: 2; pointer-events: none; }
+.mole { position: absolute; bottom: 14%; left: 10%; right: 10%; height: 82%; border: none; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; animation: moleUp .25s ease-out; z-index: 1; }
+.mole-img { width: 76%; height: 70%; font-size: 3rem; }
+.mole-name { background: #fff; border: 2px solid #222; border-radius: 8px; padding: 0 6px; font-weight: 900; font-size: clamp(.75rem, 2.2vw, 1rem); position: relative; z-index: 3; margin-bottom: 4%; }
+.mole.down { animation: moleDown .2s ease-in forwards; }
+.mole.bonk { animation: bonk .3s ease forwards; }
+.mole.oops { animation: shake .3s; }
+@keyframes moleUp { from { transform: translateY(80%); } }
+@keyframes moleDown { to { transform: translateY(90%); } }
+@keyframes bonk { 30% { transform: scale(1.15, .8); } to { transform: translateY(90%) scale(.8); opacity: 0; } }
+
+/* 먹이사슬 탑 */
+.tower-wrap { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 10px; align-items: start; }
+.tower { display: flex; flex-direction: column; gap: 4px; max-height: 62vh; overflow-y: auto; padding: 8px; background: linear-gradient(180deg, #e3f2fd, #c8e6c9); border: 4px solid #222; border-radius: 16px; }
+.tower.wobble { animation: shake .5s; }
+.t-block { display: flex; align-items: center; gap: 8px; background: #fff; border: 3px solid #222; border-radius: 12px; padding: 4px 8px; animation: dropIn .35s ease-out; }
+.t-block.start { border-color: var(--green); background: #e8f5e9; margin-top: 8px; }
+.t-block .muted { margin-left: auto; font-size: .75rem; }
+.t-img { width: 44px; height: 44px; font-size: 1.8rem; }
+@keyframes dropIn { from { transform: translateY(-30px); opacity: 0; } }
+.tc-img { width: 64px; height: 64px; margin: 0 auto 2px; }
+
+/* 생태 빙고 */
+.bingo-call { text-align: center; margin-top: 0; }
+.bingo-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 640px; margin: 0 auto; }
+.bingo-cell { aspect-ratio: 1.3; background: #fff; border: 3px solid #222; border-radius: 12px; font-family: var(--font-title); font-size: clamp(.85rem, 2.4vw, 1.2rem); box-shadow: 0 3px 0 #222; padding: 4px; }
+.bingo-cell.marked { background: #b9f6ca; position: relative; }
+.bingo-cell.marked::after { content: '⚪'; position: absolute; right: 4px; top: 2px; font-size: .9rem; }
+.bingo-cell.hint { box-shadow: 0 0 0 4px var(--yellow); }
+
+/* OX 퀴즈쇼 */
+.ox-q { text-align: center; margin-top: 0; }
+.ox-stage { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; height: min(44vh, 340px); }
+.ox-zone { border: 4px solid #222; border-radius: 18px; font-size: clamp(3rem, 10vw, 6rem); color: #fff; }
+.ox-zone.o { background: linear-gradient(180deg, #64b5f6, #1e88e5); }
+.ox-zone.x { background: linear-gradient(180deg, #ef9a9a, #e53935); }
+.ox-stage.reveal-o .ox-zone.x, .ox-stage.reveal-x .ox-zone.o { filter: grayscale(1) brightness(.6); }
+.ox-avatar { position: absolute; bottom: 6%; left: calc(50% - 50px); width: 100px; height: 100px; transition: left .4s ease; pointer-events: none; }
+.ox-avatar.at-o { left: calc(25% - 50px); }
+.ox-avatar.at-x { left: calc(75% - 50px); }
+.ox-avatar-img { width: 100%; height: 100%; animation: hop 1s ease-in-out infinite; }
+.ox-avatar.fall { animation: fall2 .8s ease-in forwards; }
+.ox-avatar.cheer .ox-avatar-img { animation: hop .4s ease-in-out infinite; }
+@keyframes fall2 { to { transform: translateY(60px) scale(.4) rotate(200deg); opacity: 0; } }
+
+/* 오염 정화 디펜스 */
+.def-field { position: relative; height: min(52vh, 400px); background: linear-gradient(90deg, #a5d6a7 0 14%, #cfd8dc 14%); border: 4px solid #222; border-radius: 18px; overflow: hidden; }
+.def-field.hurt { animation: shake .4s; box-shadow: inset 0 0 40px rgba(229,57,53,.6); }
+.def-home { position: absolute; left: 0; top: 0; bottom: 0; width: 14%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; z-index: 2; }
+.def-home small { font-size: .8rem; font-weight: 900; }
+.def-lane { position: absolute; left: 14%; right: 0; height: 26%; border-top: 2px dashed #90a4ae; }
+.def-mon { position: absolute; right: -120px; width: 110px; height: 26%; border: none; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; animation: defMove linear forwards; z-index: 3; }
+@keyframes defMove { to { right: 86%; } }
+.def-img { width: 64px; height: 64px; }
+.def-label { background: #fff; border: 2px solid #222; border-radius: 8px; font-size: .72rem; font-weight: 900; padding: 0 4px; white-space: nowrap; }
+.def-mon.sel .def-img { filter: drop-shadow(0 0 6px #ffeb3b) drop-shadow(0 0 2px #ffeb3b); }
+.def-mon.sel .def-label { background: var(--yellow); }
+.def-mon.cleaned { animation-play-state: paused; transform: scale(0); transition: transform .35s; }
+.def-mon.angry .def-img { animation: hitFlash .6s; }
+.def-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.def-type { font-size: 1.2rem; }
+.def-type:disabled { opacity: .5; }
+@media (max-width: 600px) {
+  .tower-wrap { grid-template-columns: 1fr; }
+  .tower { max-height: 34vh; }
+  .def-mon { width: 84px; }
+  .def-img { width: 48px; height: 48px; }
+}

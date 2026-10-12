@@ -85,7 +85,7 @@ function runRound(topics) {
         h('button', { class: 'btn primary', onclick: e => {
           e.currentTarget.disabled = true; sfx.click();
           if (hearts <= 0) return finish();
-          if (hits >= 3) { reward({ coins: 2 + round, xp: 10 }); registerMon(foeMon); toast(`⚪ ${POKE_NAMES[foeMon]}${josa(POKE_NAMES[foeMon], '을/를').slice(-1)} 이겼다! 포켓몬 도감 등록`); round++; hits = 0; challenger = pick(DEX_IDS); foeMon = wildPokemonFor(challenger); }
+          if (hits >= 3) { reward({ coins: 2 + round, xp: 10 }); catchMon(foeMon); toast(`⚪ ${POKE_NAMES[foeMon]}${josa(POKE_NAMES[foeMon], '을/를').slice(-1)} 이겼다! 포켓몬 도감 등록`); round++; hits = 0; challenger = pick(DEX_IDS); foeMon = wildPokemonFor(challenger); }
           ask();
         } }, hearts <= 0 ? '결과 보기 ▶' : '다음 ▶')));
       info.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

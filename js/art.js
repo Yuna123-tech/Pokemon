@@ -218,7 +218,7 @@ const ART = (() => {
     if (!up && rnd(x, y, 70) > .45) s += `<rect x="22" y="-6" width="6" height="16" fill="#795548"/><g class="smoke"><circle cx="25" cy="-9" r="4" fill="#9e9e9e" opacity=".7"/><circle cx="28" cy="-15" r="5" fill="#bdbdbd" opacity=".55"/></g>`;
     return s;
   }
-  const ROOF = { G: '#ef5350', A: '#ffb300', P: '#26c6da', D: '#7e57c2', K: '#66bb6a', M: '#ec407a', H: '#42a5f5', C: '#e53935', X: '#8d6e63' };
+  const ROOF = { w: '#8d6e63', u: '#43a047', b: '#ab47bc', o: '#1e88e5', d: '#00897b', G: '#ef5350', A: '#ffb300', P: '#26c6da', D: '#7e57c2', K: '#66bb6a', M: '#ec407a', H: '#42a5f5', C: '#e53935', X: '#8d6e63' };
   function building(ch) {
     const roof = ROOF[ch] || '#ef5350';
     return `<ellipse cx="16" cy="42" rx="15" ry="2.6" fill="#000" opacity=".25"/>` +

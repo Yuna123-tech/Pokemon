@@ -15,8 +15,8 @@ function blankProfile(name, starter) {
     coins: 0, earned: { date: '', coins: 0 }, exchanged: { date: '', units: 0 },
     items: { xpcandy: 0, candy: 0 },
     titles: ['새싹 트레이너'], title: '새싹 트레이너', themes: ['basic'], theme: 'basic',
-    stats: { correct: 0, answered: 0, roundBest: 0, speedBest: 0, duelWins: 0, memoryBest: 0, wild: 0, totalCoins: 0 },
-    usedCoupons: [], receipts: [], trash: { date: '', got: [] }, mons: [],
+    stats: { correct: 0, answered: 0, roundBest: 0, speedBest: 0, duelWins: 0, memoryBest: 0, wild: 0, totalCoins: 0, whackBest: 0, towerBest: 0, bingoBest: 0, oxBest: 0, defenseBest: 0 },
+    usedCoupons: [], receipts: [], trash: { date: '', got: [] }, mons: [], candy: {},
     pos: { map: 'town', x: 7, y: 5 },
     created: Date.now(),
   };
@@ -241,15 +241,22 @@ function dexView(tab = 'eco') {
     h('button', { class: `t-tab ${tab === 'mon' ? 'on' : ''}`, onclick: () => openModal(dexView('mon')) }, `⚪ 포켓몬 도감 ${save.mons.length}/${ALL_MONS.length}`));
   if (tab === 'mon') {
     const grid = h('div', { class: 'dex-grid mon-grid' });
-    Object.entries(WILD_POKEMON).forEach(([org, ids]) => ids.forEach((id, i) => {
-      const caught = save.mons.includes(id);
-      grid.appendChild(h('div', { class: `dex-cell ${caught ? 'caught' : 'unknown'}`, title: caught ? POKE_NAMES[id] : '' },
-        pokeImg(id, '⚪', 'dex-img', true),
-        h('div', { class: 'dex-name' }, caught ? POKE_NAMES[id] : '???'),
-        h('div', { class: 'dex-org' }, caught ? `${i >= 2 ? '✨ ' : ''}${CREATURES[org].name}` : `No.${String(id).padStart(4, '0')}`)));
-    }));
+    const seen = new Set();
+    Object.entries(WILD_POKEMON).forEach(([org, ids]) => {
+      // 야생에서 나오는 포켓몬 + 진화로만 얻는 포켓몬 (공식 진화 순서대로)
+      const list = [];
+      ids.forEach(id => familyMembers(familyRoot(id)).forEach(m => { if (!seen.has(m) && (ids.includes(m) || !ALL_WILD.has(m))) { seen.add(m); list.push(m); } }));
+      list.forEach(id => {
+        const caught = save.mons.includes(id);
+        const evoOnly = !ALL_WILD.has(id);
+        grid.appendChild(h('div', { class: `dex-cell ${caught ? 'caught' : 'unknown'}`, title: caught ? POKE_NAMES[id] : '' },
+          pokeImg(id, '⚪', 'dex-img', true),
+          h('div', { class: 'dex-name' }, caught ? POKE_NAMES[id] : '???'),
+          h('div', { class: 'dex-org' }, evoOnly ? '🧬 진화로 만나요' : caught ? `${isRareMon(org, id) ? '✨ ' : ''}${CREATURES[org].name}` : `No.${String(id).padStart(4, '0')}`)));
+      });
+    });
     return h('div', null, h('h2', null, '⚪ 포켓몬 도감'), tabs,
-      h('p', { class: 'muted' }, '야생 포켓몬을 잡으면 등록돼요. 아래 이름은 그 포켓몬이 닮은 실제 생물이에요. ✨ 표시는 드물게 나오는 포켓몬! 10마리마다 보너스 코인을 받아요.'), grid);
+      h('p', { class: 'muted' }, '야생 포켓몬을 잡으면 등록돼요. 아래 이름은 그 포켓몬이 닮은 실제 생물이에요. ✨ 드물게 나오는 포켓몬 · 🧬 사탕이나 레벨 업으로 진화시켜야 만나는 포켓몬! 10마리마다 보너스 코인을 받아요.'), grid);
   }
   const grid = h('div', { class: 'dex-grid' });
   DEX_IDS.forEach(id => {
@@ -290,8 +297,17 @@ function stageOf(level) { return level >= EVOLVE_LEVELS[1] ? 2 : level >= EVOLVE
 function partnerInfo(key, p = save) {
   if (!p) return null;
   key = key || p.active;
-  const st = STARTERS[key]; const data = p.partners[key];
-  if (!st || !data) return null;
+  const data = p.partners[key];
+  if (!data) return null;
+  const st = STARTERS[key];
+  if (!st) {
+    // 잡은 포켓몬 파트너: 공식 진화 순서(line)를 레벨에 따라 따라가요
+    const stage = stageFor(key, data.level, p);
+    const poke = data.line[stage];
+    const org = orgOfMon(data.line[0]);
+    return { key, starter: { emoji: CREATURES[org] ? CREATURES[org].emoji : '⚪', type: '', desc: `실제 생물 「${CREATURES[org] ? CREATURES[org].name : ''}」을(를) 닮은 포켓몬이에요. 공식 진화 순서대로 진화해요: ${data.line.map(i => POKE_NAMES[i]).join(' → ')}` },
+      level: data.level, xp: data.xp, next: xpToNext(data.level), stage, poke, name: POKE_NAMES[poke], data, custom: true };
+  }
   const stage = stageOf(data.level);
   let poke = st.line[stage], name = st.names[stage];
   if (poke === 'branch') {
@@ -300,6 +316,14 @@ function partnerInfo(key, p = save) {
   }
   return { key, starter: st, level: data.level, xp: data.xp, next: xpToNext(data.level), stage, poke, name, data };
 }
+// 진화 단계 (스타터: Lv7·Lv15 / 잡은 포켓몬: 남은 진화 수에 따라 Lv7·15 또는 Lv10)
+function evoThresholds(key, p = save) {
+  const data = p.partners[key];
+  if (STARTERS[key]) return EVOLVE_LEVELS;
+  const n = data.line.length - 1;
+  return n >= 2 ? [7, 15] : n === 1 ? [10] : [];
+}
+function stageFor(key, level, p = save) { return evoThresholds(key, p).filter(t => level >= t).length; }
 function partnerImg(cls = '', key, p) {
   const info = partnerInfo(key, p);
   return info ? pokeImg(info.poke, info.starter.emoji, cls) : h('span', { class: `emoji-img ${cls}` }, '⚪');
@@ -316,10 +340,11 @@ function addXp(amount, key) {
   d.xp += amount;
   while (d.level < MAX_LEVEL && d.xp >= xpToNext(d.level)) {
     d.xp -= xpToNext(d.level);
-    const beforeStage = stageOf(d.level);
+    const beforeStage = stageFor(info.key, d.level);
+    const before = partnerInfo(info.key);
     d.level++;
     pendingEvents.push({ type: 'level', key: info.key, level: d.level });
-    if (stageOf(d.level) > beforeStage) pendingEvents.push({ type: 'evolve', key: info.key, fromStage: beforeStage, toStage: stageOf(d.level) });
+    if (stageFor(info.key, d.level) > beforeStage) pendingEvents.push({ type: 'evolve', key: info.key, fromStage: beforeStage, toStage: stageFor(info.key, d.level), fromPoke: before.poke, fromName: before.name });
   }
   if (d.level >= MAX_LEVEL) d.xp = 0;
 }
@@ -362,19 +387,20 @@ function flushEvents(done = () => {}) {
 }
 
 function showEvolution(evo, done) {
-  const st = STARTERS[evo.key];
+  const st = STARTERS[evo.key] || { line: [], names: [] };
   const data = save.partners[evo.key];
   const proceed = () => {
     const after = partnerInfo(evo.key);
-    const beforePoke = st.line[evo.fromStage] === 'branch' ? after.poke : st.line[evo.fromStage];
-    const beforeName = st.names[evo.fromStage] || after.name;
-    const stageBox = h('div', { class: 'evo-stage' }, pokeImg(beforePoke, st.emoji, 'evo-img evo-before'));
+    const beforePoke = evo.fromPoke || (st.line[evo.fromStage] === 'branch' ? after.poke : st.line[evo.fromStage]);
+    const beforeName = evo.fromName || st.names[evo.fromStage] || after.name;
+    if (after.custom) registerMon(after.poke);
+    const stageBox = h('div', { class: 'evo-stage' }, pokeImg(beforePoke, after.starter.emoji, 'evo-img evo-before'));
     const text = h('p', { class: 'big-text' }, `어라…? ${beforeName}의 모습이…!`);
     const btn = h('button', { class: 'btn primary hidden', onclick: () => { closeModal(); done(); } }, '좋아요! ▶');
     openModal(h('div', { class: 'center evo-box' }, h('h2', null, '✨ 진화 ✨'), stageBox, text, btn), { locked: true });
     sfx.level();
     setTimeout(() => {
-      clear(stageBox); stageBox.appendChild(pokeImg(after.poke, st.emoji, 'evo-img evo-after'));
+      clear(stageBox); stageBox.appendChild(pokeImg(after.poke, after.starter.emoji, 'evo-img evo-after'));
       text.textContent = `축하해요! ${josa(beforeName, '은/는')} ${josa(after.name, '으로/로')} 진화했다!`;
       btn.classList.remove('hidden'); sfx.clear();
     }, 2200);
@@ -600,7 +626,8 @@ function importProfile(file, done) {
 /* =========================================================
    ⚪ 포켓몬 수집
    ========================================================= */
-const ALL_MONS = Object.values(WILD_POKEMON).flat();
+const ALL_MONS = Object.keys(POKE_NAMES).map(Number);
+const ALL_WILD = new Set(Object.values(WILD_POKEMON).flat());
 // 생물에 맞는 포켓몬 고르기 (앞쪽은 자주, 뒤쪽은 드물게)
 function wildPokemonFor(org) {
   const ids = WILD_POKEMON[org] || [CREATURES[org].poke];
@@ -610,7 +637,22 @@ function wildPokemonFor(org) {
   return ids[0];
 }
 function isRareMon(org, id) { return (WILD_POKEMON[org] || []).indexOf(id) >= 2; }
-function orgOfMon(id) { return Object.keys(WILD_POKEMON).find(k => WILD_POKEMON[k].includes(id)); }
+function orgOfMon(id) {
+  const direct = Object.keys(WILD_POKEMON).find(k => WILD_POKEMON[k].includes(id));
+  if (direct) return direct;
+  const fam = familyMembers(familyRoot(id));
+  return Object.keys(WILD_POKEMON).find(k => WILD_POKEMON[k].some(x => fam.includes(x)));
+}
+/* ---------- 공식 진화 순서 ---------- */
+function evoChildren(id) { return Object.keys(EVO_FROM).map(Number).filter(k => EVO_FROM[k] === id && POKE_NAMES[k]); }
+function familyRoot(id) { let r = id; while (EVO_FROM[r] && POKE_NAMES[EVO_FROM[r]]) r = EVO_FROM[r]; return r; }
+function familyMembers(root) { const out = [root]; for (let i = 0; i < out.length; i++) out.push(...evoChildren(out[i])); return out; }
+function evoDepth(id) { let d = 0, r = id; while (EVO_FROM[r] && POKE_NAMES[EVO_FROM[r]]) { r = EVO_FROM[r]; d++; } return d; }
+function evolveCost(id) { return evoDepth(id) === 0 ? 12 : 30; }
+function addCandy(id, n) { const r = familyRoot(id); save.candy[r] = (save.candy[r] || 0) + n; persist(); }
+function candyOf(id) { return save.candy[familyRoot(id)] || 0; }
+// 야생에서 잡을 때마다: 처음이면 도감 등록, 항상 사탕 3개
+function catchMon(id) { const isNew = registerMon(id); addCandy(id, 3); return isNew; }
 function registerMon(id) {
   if (!save || save.mons.includes(id)) return false;
   save.mons.push(id);

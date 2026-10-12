@@ -212,7 +212,8 @@ function openPlace(go) {
   townActive = false;
   stopWalking();
   ({ story: renderMap, round: () => modeRound(), speed: () => modeSpeed(), duel: () => modeDuel(), team: () => modeTeam(),
-    memory: () => modeMemory(), shop: renderShop, center: renderCenter, exchange: renderExchange })[go]();
+    memory: () => modeMemory(), shop: renderShop, center: renderCenter, exchange: renderExchange,
+    whack: () => modeWhack(), tower: () => modeTower(), bingo: () => modeBingo(), oxshow: () => modeOXShow(), defense: () => modeDefense() })[go]();
 }
 
 /* ---------- 야생 생물 만남 ---------- */
@@ -243,12 +244,13 @@ function wildEncounter(id, pokeId) {
       missionEvent(`meet-${c.role}`);
       catchAnimation(document.querySelector('.wild-arena'));
       const isNew = registerDex(id);
-      const newMon = registerMon(mon);
+      const newMon = catchMon(mon);
       save.stats.wild++;
       const r = reward({ xp: rare ? 20 : 12, coins: rare ? 6 : 3 });
       sfx.correct(); if (isNew || newMon) setTimeout(sfx.catch, 250);
       msg = [newMon ? `⚪ ${josa(mname, '을/를')} 포켓몬 도감에 등록했다!` : `${josa(mname, '은/는')} 이미 잡은 포켓몬이에요.`,
         isNew ? `📕 생태 도감에 「${c.name}」 등록!` : '',
+        `🍬 ${POKE_NAMES[familyRoot(mon)]} 사탕 +3 (모아서 진화!)`,
         `✨경험치 +${rare ? 20 : 12}${r.coins ? `  🪙+${r.coins}` : ''}`].filter(Boolean).join('  ');
     } else {
       e.currentTarget.classList.add('wrong');

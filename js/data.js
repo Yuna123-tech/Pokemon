@@ -435,11 +435,11 @@ const MAPS = {
       'T,,,,..=..,,,,T',
       'Tff,,..=..,,ffT',
       'T.....===.....T',
-      'TFF.F..R..F.FFT',
-      'TTTTTTTTTTTTTTT',
+      'TFF.F..=..F.FFT',
+      'TTTTTTTvTTTTTTT',
     ],
-    exits: { '^': { map: 'town', x: 7, y: 9 } },
-    signs: { N: '🪧 학교 화단에서는 어떤 것들을 볼 수 있을까요? 꽃, 나비, 개미 같은 생물 요소와 햇빛, 흙, 물 같은 비생물 요소가 함께 있어요. (과학 42쪽)' },
+    exits: { '^': { map: 'town', x: 7, y: 9 }, v: { map: 'plaza', x: 7, y: 1 } },
+    signs: { N: '🪧 ⬇️ 아래로 가면 놀이 광장! 학교 화단에서는 어떤 것들을 볼 수 있을까요? 꽃, 나비, 개미 같은 생물 요소와 햇빛, 흙, 물 같은 비생물 요소가 함께 있어요. (과학 42쪽)' },
     pool: ['woodsorrel', 'fleabane', 'dandelion', 'sunflower', 'sparrow', 'butterfly', 'bee', 'ant', 'snail2', 'tit', 'caterpillar'],
   },
   forest: {
@@ -596,8 +596,27 @@ const MAPS = {
     pool: ['gull', 'dolphin', 'turtle', 'starfish', 'clam', 'seahorse', 'octopus', 'whale', 'seaweed', 'crab', 'coral'],
   },
 };
+MAPS.plaza = {
+  name: '놀이 광장', bg: 'town', icon: '🎪',
+  rows: [
+    'TTTTTTT^TTTTTTT',
+    'TFF..w.=.u..FFT',
+    'T....=.=.=....T',
+    'T.F..=====..F.T',
+    'T....=.N.=....T',
+    'T.b===...===o.T',
+    'T....=...=....T',
+    'TF...==d==...FT',
+    'T.............T',
+    'TFF,,.....,,FFT',
+    'TTTTTTTTTTTTTTT',
+  ],
+  exits: { '^': { map: 'school', x: 7, y: 8 } },
+  signs: { N: '🪧 놀이 광장에 온 걸 환영해요! 🔨 분류 두더지 · 🗼 먹이사슬 탑 · 🎯 생태 빙고 · ⭕ OX 퀴즈쇼 · 🛡️ 오염 정화 디펜스를 즐겨 보세요.' },
+  pool: ['sparrow', 'magpie', 'butterfly', 'bee', 'ant', 'grass', 'clover', 'dandelion'],
+};
 // 지도에서 보이는 순서 (바로 가기 메뉴)
-const MAP_ORDER = ['town', 'school', 'forest', 'park', 'mountain', 'river', 'wetland', 'factory', 'beach', 'island'];
+const MAP_ORDER = ['town', 'plaza', 'school', 'forest', 'park', 'mountain', 'river', 'wetland', 'factory', 'beach', 'island'];
 const BUILDINGS = {
   G: { icon: '🏟️', name: '체육관 길',   go: 'story' },
   A: { icon: '🏆', name: '라운드 아레나', go: 'round' },
@@ -608,6 +627,11 @@ const BUILDINGS = {
   H: { icon: '🏪', name: '상점',         go: 'shop' },
   C: { icon: '🏥', name: '포켓몬센터',    go: 'center' },
   X: { icon: '💱', name: '환전소',       go: 'exchange' },
+  w: { icon: '🔨', name: '분류 두더지',   go: 'whack' },
+  u: { icon: '🗼', name: '먹이사슬 탑',   go: 'tower' },
+  b: { icon: '🎯', name: '생태 빙고',     go: 'bingo' },
+  o: { icon: '⭕', name: 'OX 퀴즈쇼',     go: 'oxshow' },
+  d: { icon: '🛡️', name: '오염 정화 디펜스', go: 'defense' },
 };
 
 const TOPICS = {

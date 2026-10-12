@@ -173,6 +173,13 @@ function renderCenter() {
       h('div', { class: 'mini-partners' }, ...partners),
       h('p', { class: 'muted' }, '누르면 함께 다닐 파트너가 바뀌어요. 새 파트너는 상점에서 입양할 수 있어요.')),
     h('div', { class: 'panel' },
+      h('h3', null, `📦 내 포켓몬 상자 (${save.mons.length}마리)`),
+      h('p', { class: 'muted' }, '포켓몬을 누르면 공식 진화 단계를 볼 수 있어요. 🍬 사탕을 모아 진화시키거나, 파트너로 정해 함께 레벨 업할 수 있어요.'),
+      save.mons.length ? h('div', { class: 'box-grid' }, ...save.mons.slice().sort((a, b) => a - b).map(id =>
+        h('button', { class: 'box-cell', onclick: () => { sfx.click(); openModal(monDetail(id)); } }, pokeImg(id, '⚪', 'box-img', true), h('div', null, POKE_NAMES[id]),
+          evoChildren(id).length ? h('div', { class: 'box-candy' }, `🍬${candyOf(id)}/${evolveCost(id)}`) : h('div', { class: 'box-candy done' }, '최종')))) :
+        h('p', null, '아직 잡은 포켓몬이 없어요. 지도의 풀숲에서 야생 포켓몬을 찾아보세요!')),
+    h('div', { class: 'panel' },
       h('h3', null, '🪪 트레이너 카드'),
       h('div', { class: 'form-row' }, h('label', null, '칭호'), titleSel),
       h('div', { class: 'form-row' }, h('label', null, '배경'), themeSel),
@@ -447,4 +454,84 @@ function tStudents(body) {
           persist(); openModal(teacherView('students'));
         } }, '삭제'));
     })) : h('p', null, '저장된 트레이너가 없어요.'));
+}
+
+/* ---------- 포켓몬 상세: 공식 진화 단계 · 사탕 진화 · 파트너 ---------- */
+function evoTreeView(root, current) {
+  const row = (id) => {
+    const owned = save.mons.includes(id);
+    const node = h('div', { class: `evo-node ${owned ? 'owned' : 'unknown'} ${id === current ? 'current' : ''}` },
+      pokeImg(id, '⚪', 'evo-node-img', true), h('div', null, owned ? POKE_NAMES[id] : '???'));
+    const kids = evoChildren(id);
+    if (!kids.length) return node;
+    return h('div', { class: 'evo-branch' }, node, h('div', { class: 'evo-arrow' }, '➜'), h('div', { class: 'evo-kids' }, ...kids.map(row)));
+  };
+  return h('div', { class: 'evo-tree' }, row(root));
+}
+
+function monDetail(id) {
+  const org = orgOfMon(id);
+  const kids = evoChildren(id);
+  const cost = evolveCost(id);
+  const candy = candyOf(id);
+  const key = `m${id}`;
+  const box = h('div', { class: 'center mon-detail' },
+    h('div', { class: 'dex-detail-img' }, pokeImg(id, '⚪')),
+    h('h2', null, POKE_NAMES[id]),
+    h('p', { class: 'muted' }, `No.${String(id).padStart(4, '0')} · 닮은 실제 생물: ${org ? CREATURES[org].name : '-'} (${org ? ROLE_INFO[CREATURES[org].role].label : ''})`),
+    h('h3', null, '🧬 공식 진화 단계'),
+    evoTreeView(familyRoot(id), id),
+    h('p', { class: 'big-text' }, `🍬 ${POKE_NAMES[familyRoot(id)]} 사탕: ${candy}개`),
+    h('p', { class: 'muted' }, '같은 진화 가족의 포켓몬을 잡을 때마다 사탕 3개를 받아요.'));
+  if (kids.length) {
+    box.appendChild(h('div', { class: 'row-btns' }, ...kids.map(k => {
+      const has = save.mons.includes(k);
+      return h('button', { class: 'btn primary', disabled: has || candy < cost ? 'disabled' : null, onclick: () => evolveByCandy(id, k) },
+        has ? `${POKE_NAMES[k]} (이미 있어요)` : `✨ ${josa(POKE_NAMES[k], '으로/로')} 진화 (🍬${cost})`);
+    })));
+  } else box.appendChild(h('p', { class: 'chip' }, '🏆 최종 진화 모습이에요!'));
+  box.appendChild(h('div', { class: 'row-btns' },
+    h('button', { class: 'btn', onclick: () => makeMonPartner(id) }, save.partners[key] ? (save.active === key ? '🤝 지금 함께하는 파트너' : '🤝 이 포켓몬과 함께 다니기') : '🤝 파트너로 정하기 (Lv.1부터 레벨 업 진화)'),
+    h('button', { class: 'btn small', onclick: closeModal }, '닫기')));
+  return box;
+}
+
+function evolveByCandy(from, to) {
+  const cost = evolveCost(from);
+  if (candyOf(from) < cost) return;
+  save.candy[familyRoot(from)] -= cost;
+  persist();
+  sfx.level();
+  const stageBox = h('div', { class: 'evo-stage' }, pokeImg(from, '⚪', 'evo-img evo-before'));
+  const text = h('p', { class: 'big-text' }, `어라…? ${POKE_NAMES[from]}의 모습이…!`);
+  const btn = h('button', { class: 'btn primary hidden', onclick: () => { closeModal(); renderCenter(); } }, '좋아요! ▶');
+  openModal(h('div', { class: 'center evo-box' }, h('h2', null, '✨ 진화 ✨'), stageBox, text, btn), { locked: true });
+  setTimeout(() => {
+    clear(stageBox); stageBox.appendChild(pokeImg(to, '⚪', 'evo-img evo-after'));
+    registerMon(to); reward({ xp: 15 });
+    text.textContent = `축하해요! ${josa(POKE_NAMES[from], '은/는')} ${josa(POKE_NAMES[to], '으로/로')} 진화했다! (포켓몬 도감 등록)`;
+    btn.classList.remove('hidden'); sfx.clear();
+  }, 2200);
+}
+
+function makeMonPartner(id) {
+  const key = `m${id}`;
+  if (save.partners[key]) { save.active = key; persist(); closeModal(); toast(`🤝 ${josa(POKE_NAMES[partnerInfo(key).poke], '와/과')} 함께 다녀요!`); renderCenter(); return; }
+  const build = (line) => {
+    const next = evoChildren(line[line.length - 1]);
+    if (!next.length) return finish(line);
+    if (next.length === 1) return build(line.concat(next));
+    // 갈래 진화: 원하는 모습 고르기
+    openModal(h('div', { class: 'center' }, h('h2', null, '🧬 어떤 모습으로 진화하게 할까요?'),
+      h('p', null, '이 포켓몬은 진화 갈래가 여러 개예요. 레벨이 오르면 고른 모습으로 진화해요.'),
+      h('div', { class: 'branch-row' }, ...next.map(n => h('button', { class: 'branch-btn', onclick: () => build(line.concat([n])) },
+        pokeImg(n, '⚪', 'branch-img'), h('div', null, POKE_NAMES[n]))))), { locked: true });
+  };
+  const finish = (line) => {
+    save.partners[key] = { level: 1, xp: 0, branch: null, line };
+    save.active = key; persist(); closeModal(); sfx.catch();
+    toast(`🤝 ${josa(POKE_NAMES[id], '이/가')} 새 파트너가 되었어요! ${line.length > 1 ? `레벨이 오르면 ${josa(line.slice(1).map(i => POKE_NAMES[i]).join(' → '), '으로/로')} 진화해요.` : ''}`, 3200);
+    renderCenter();
+  };
+  build([id]);
 }
