@@ -16,7 +16,7 @@ function blankProfile(name, starter) {
     items: { xpcandy: 0, candy: 0 },
     titles: ['새싹 트레이너'], title: '새싹 트레이너', themes: ['basic'], theme: 'basic',
     stats: { correct: 0, answered: 0, roundBest: 0, speedBest: 0, duelWins: 0, memoryBest: 0, wild: 0, totalCoins: 0 },
-    usedCoupons: [], receipts: [], trash: { date: '', got: [] },
+    usedCoupons: [], receipts: [], trash: { date: '', got: [] }, mons: [],
     pos: { map: 'town', x: 7, y: 5 },
     created: Date.now(),
   };
@@ -119,10 +119,10 @@ function fnv(str) {
 function normName(n) { return String(n).replace(/\s+/g, '').toLowerCase(); }
 
 /* ---------- 포켓몬 이미지 (실패 시 다음 주소 → 이모지) ---------- */
-function pokeImg(pokeId, emoji, cls = '') {
+function pokeImg(pokeId, emoji, cls = '', lazy = false) {
   if (!pokeId) return h('span', { class: `emoji-img ${cls}`, role: 'img' }, emoji || '❔');
   let idx = 0;
-  const img = h('img', { class: `poke-img ${cls}`, alt: '', draggable: 'false' });
+  const img = h('img', { class: `poke-img ${cls}`, alt: '', draggable: 'false', loading: lazy ? 'lazy' : null });
   img.addEventListener('error', () => {
     idx++;
     if (idx < IMG_SOURCES.length) img.src = IMG_SOURCES[idx](pokeId);
@@ -234,8 +234,23 @@ function registerDex(id) {
   missionEvent('dex');
   return true;
 }
-function dexView() {
+function dexView(tab = 'eco') {
   if (!save) return h('p', null, '트레이너를 먼저 골라 주세요.');
+  const tabs = h('div', { class: 't-tabs' },
+    h('button', { class: `t-tab ${tab === 'eco' ? 'on' : ''}`, onclick: () => openModal(dexView('eco')) }, `📕 생태 도감 ${save.dex.length}/${DEX_IDS.length}`),
+    h('button', { class: `t-tab ${tab === 'mon' ? 'on' : ''}`, onclick: () => openModal(dexView('mon')) }, `⚪ 포켓몬 도감 ${save.mons.length}/${ALL_MONS.length}`));
+  if (tab === 'mon') {
+    const grid = h('div', { class: 'dex-grid mon-grid' });
+    Object.entries(WILD_POKEMON).forEach(([org, ids]) => ids.forEach((id, i) => {
+      const caught = save.mons.includes(id);
+      grid.appendChild(h('div', { class: `dex-cell ${caught ? 'caught' : 'unknown'}`, title: caught ? POKE_NAMES[id] : '' },
+        pokeImg(id, '⚪', 'dex-img', true),
+        h('div', { class: 'dex-name' }, caught ? POKE_NAMES[id] : '???'),
+        h('div', { class: 'dex-org' }, caught ? `${i >= 2 ? '✨ ' : ''}${CREATURES[org].name}` : `No.${String(id).padStart(4, '0')}`)));
+    }));
+    return h('div', null, h('h2', null, '⚪ 포켓몬 도감'), tabs,
+      h('p', { class: 'muted' }, '야생 포켓몬을 잡으면 등록돼요. 아래 이름은 그 포켓몬이 닮은 실제 생물이에요. ✨ 표시는 드물게 나오는 포켓몬! 10마리마다 보너스 코인을 받아요.'), grid);
+  }
   const grid = h('div', { class: 'dex-grid' });
   DEX_IDS.forEach(id => {
     const c = CREATURES[id]; const caught = save.dex.includes(id);
@@ -244,9 +259,9 @@ function dexView() {
       creatureImg(id, 'dex-img'), h('div', { class: 'dex-name' }, caught ? c.name : '???')));
   });
   return h('div', null,
-    h('h2', null, `📕 생태 도감  ${save.dex.length} / ${DEX_IDS.length}`),
+    h('h2', null, '📕 생태 도감'), tabs,
     h('p', { class: 'muted' }, '퀴즈를 맞히거나 풀숲에서 야생 생물을 만나면 도감에 등록돼요.',
-      save.dex.length < DEX_IDS.length ? ' 💡 숲길·강가·해변의 풀숲(🌾)을 돌아다녀 보세요!' : ' 🎉 도감 완성!'),
+      save.dex.length < DEX_IDS.length ? ' 💡 10곳의 지역을 모두 돌아다녀 보세요!' : ' 🎉 도감 완성!'),
     grid);
 }
 function dexDetail(id) {
@@ -261,6 +276,7 @@ function dexDetail(id) {
     h('p', null, c.fact),
     eats.length ? h('p', null, h('b', null, '🍴 먹는 것: '), eats.join(', ')) : null,
     eatenBy.length ? h('p', null, h('b', null, '⚠️ 먹히는 상대: '), eatenBy.join(', ')) : null,
+    h('p', { class: 'muted' }, `닮은 포켓몬들: ${(WILD_POKEMON[id] || []).map(p => POKE_NAMES[p]).join(', ')}`),
     h('button', { class: 'btn small', onclick: () => openModal(dexView()) }, '← 도감으로'));
 }
 
@@ -449,11 +465,11 @@ function rankingSummary(p = save) {
   const stars = Object.values(p.cleared || {}).reduce((a, b) => a + b, 0);
   return { name: p.name, lv: info ? info.level : 1, dex: p.dex.length, stars, correct: p.stats.correct,
     answered: p.stats.answered, round: p.stats.roundBest, speed: p.stats.speedBest, duel: p.stats.duelWins,
-    coins: p.stats.totalCoins, poke: info ? info.poke : 25 };
+    coins: p.stats.totalCoins, poke: info ? info.poke : 25, mon: (p.mons || []).length };
 }
 function makeRecordCode(p = save) {
   const r = rankingSummary(p);
-  const nums = [r.lv, r.dex, r.stars, r.correct, r.answered, r.round, r.speed, r.duel, r.coins, r.poke].map(n => Math.max(0, n | 0).toString(36));
+  const nums = [r.lv, r.dex, r.stars, r.correct, r.answered, r.round, r.speed, r.duel, r.coins, r.poke, r.mon].map(n => Math.max(0, n | 0).toString(36));
   const body = nums.join('.');
   const chk = (fnv(`K|${normName(r.name)}|${body}|${CLASS_CONFIG.codeSecret}`) % 1296).toString(36).padStart(2, '0');
   return `ECO-${body}-${chk}`.toUpperCase();
@@ -465,8 +481,8 @@ function readRecordCode(name, code) {
   const chk = (fnv(`K|${normName(name)}|${body}|${CLASS_CONFIG.codeSecret}`) % 1296).toString(36).padStart(2, '0');
   if (chk !== m[2].toLowerCase()) return null;
   const n = body.split('.').map(x => parseInt(x, 36));
-  if (n.length !== 10 || n.some(isNaN)) return null;
-  return { name, lv: n[0], dex: n[1], stars: n[2], correct: n[3], answered: n[4], round: n[5], speed: n[6], duel: n[7], coins: n[8], poke: n[9] };
+  if ((n.length !== 10 && n.length !== 11) || n.some(isNaN)) return null;
+  return { name, lv: n[0], dex: n[1], stars: n[2], correct: n[3], answered: n[4], round: n[5], speed: n[6], duel: n[7], coins: n[8], poke: n[9], mon: n[10] || 0 };
 }
 
 /* =========================================================
@@ -579,4 +595,32 @@ function importProfile(file, done) {
     } catch (e) { toast('기록 파일을 읽을 수 없어요.'); }
   };
   rd.readAsText(file);
+}
+
+/* =========================================================
+   ⚪ 포켓몬 수집
+   ========================================================= */
+const ALL_MONS = Object.values(WILD_POKEMON).flat();
+// 생물에 맞는 포켓몬 고르기 (앞쪽은 자주, 뒤쪽은 드물게)
+function wildPokemonFor(org) {
+  const ids = WILD_POKEMON[org] || [CREATURES[org].poke];
+  const weights = ids.map((_, i) => Math.max(1, 6 - 2 * i));
+  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < ids.length; i++) { r -= weights[i]; if (r <= 0) return ids[i]; }
+  return ids[0];
+}
+function isRareMon(org, id) { return (WILD_POKEMON[org] || []).indexOf(id) >= 2; }
+function orgOfMon(id) { return Object.keys(WILD_POKEMON).find(k => WILD_POKEMON[k].includes(id)); }
+function registerMon(id) {
+  if (!save || save.mons.includes(id)) return false;
+  save.mons.push(id);
+  const n = save.mons.length;
+  if (n % 10 === 0) {
+    reward({ coins: 30, bypassCap: true });
+    setTimeout(() => { sfx.clear(); toast(`🎉 포켓몬 ${n}마리 수집! 보너스 🪙30`, 2600); }, 600);
+  }
+  const titles = { 30: '포켓몬 수집가', 80: '포켓몬 탐험 대장', 150: '포켓몬 박사' };
+  if (titles[n] && !save.titles.includes(titles[n])) { save.titles.push(titles[n]); setTimeout(() => toast(`🏷️ 새 칭호 「${titles[n]}」!`, 2600), 1400); }
+  persist();
+  return true;
 }

@@ -871,3 +871,24 @@ b { font-weight: 900; }
   .buddy-bubble { font-size: .78rem; border-radius: 14px 14px 14px 2px; }
 }
 .world .tile > svg { inset: -.5px; width: calc(100% + 1px); height: calc(100% + 1px); }
+
+/* ---------- 돌아다니는 야생 포켓몬 · 포켓몬 도감 ---------- */
+.roamer {
+  position: absolute; left: 0; top: 0; width: var(--t); height: var(--t); pointer-events: none;
+  transform: translate(calc(var(--x) * var(--t)), calc(var(--y) * var(--t))); animation: roam 2.6s ease-in-out infinite;
+}
+@keyframes roam { 0%, 100% { translate: 0 0; } 25% { translate: 3px -5px; } 50% { translate: -2px 0; } 75% { translate: -4px -4px; } }
+.roamer-img { width: 92%; height: 92%; margin: 4%; filter: drop-shadow(0 3px 0 rgba(0,0,0,.3)); }
+.roamer::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: 2%; height: 14%; background: rgba(0,0,0,.25); border-radius: 50%; z-index: -1; }
+.roamer.rare .roamer-img { filter: drop-shadow(0 0 4px #fff59d) drop-shadow(0 3px 0 rgba(0,0,0,.3)); }
+.roamer-spark { position: absolute; right: -2px; top: -4px; font-size: calc(var(--t) * .35); animation: blink 1s infinite; }
+.wild-arena.rare { background: linear-gradient(180deg, #fff9c4, #ffcc80) !important; box-shadow: inset 0 0 18px #fff59d; }
+.mon-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
+.mon-grid .dex-img { width: 60px; height: 60px; }
+.dex-org { font-size: .72rem; color: var(--muted); font-weight: 700; }
+.modal { z-index: 1000; }
+.toast { z-index: 1100; }
+/* 파트너는 지도를 가리지 않도록 지도 아래에 */
+.world-wrap { flex-direction: column; align-items: center; }
+.buddy { position: static; max-width: 100%; margin-top: 6px; flex-direction: row-reverse; justify-content: center; pointer-events: auto; }
+.buddy-bubble { border-radius: 14px 14px 14px 2px; max-width: 520px; }

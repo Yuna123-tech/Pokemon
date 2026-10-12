@@ -63,6 +63,7 @@ function renderWorld() {
   }
   const player = h('div', { class: 'player', id: 'player' }, h('div', { class: 'player-shadow' }), partnerImg('player-img'));
   grid.appendChild(player);
+  spawnRoamers(grid, m);
   const weather = weatherOf(save.pos.map), W = WEATHER_INFO[weather];
   grid.appendChild(h('div', { class: `weather w-${weather} ${isNight() ? 'night' : ''} wmap-${m.bg}` }));
   missionEvent('visit', 1, save.pos.map);
@@ -178,6 +179,12 @@ function arrive(isFinal) {
   if (ch === 'Q' && !trashGot(map, x, y)) { persist(); traceEncounter(x, y); return true; }
   if (ch === 'E' && m.signs.E && !walker?.ecoShown) { if (walker) walker.ecoShown = true; toast(m.signs.E, 3200); }
   if ((ch === 'N' || ch === 'Y') && isFinal && m.signs[ch]) { openModal(h('div', { class: 'center' }, h('div', { class: 'big-emoji' }, '🪧'), h('p', { class: 'big-text' }, m.signs[ch]))); return true; }
+  const roamer = roamers.find(r => r.x === x && r.y === y);
+  if (roamer) {
+    roamers = roamers.filter(r => r !== roamer); roamer.el.remove(); persist();
+    wildEncounter(roamer.org, roamer.mon);
+    return true;
+  }
   if (ENCOUNTER_TILES.has(ch)) {
     stepsSinceEncounter++;
     if (stepsSinceEncounter >= 3 && Math.random() < 0.22) {
@@ -216,8 +223,11 @@ function encounterQuestion(id) {
   return Object.assign({}, q, { choices: q.shuffle ? shuffle(q.choices) : q.choices.slice() });
 }
 
-function wildEncounter(id) {
+function wildEncounter(id, pokeId) {
   const c = CREATURES[id];
+  const mon = pokeId || wildPokemonFor(id);
+  const mname = POKE_NAMES[mon] || c.pname;
+  const rare = isRareMon(id, mon);
   const q = encounterQuestion(id);
   if (!q) return;
   sfx.catch();
@@ -233,15 +243,18 @@ function wildEncounter(id) {
       missionEvent(`meet-${c.role}`);
       catchAnimation(document.querySelector('.wild-arena'));
       const isNew = registerDex(id);
+      const newMon = registerMon(mon);
       save.stats.wild++;
-      const r = reward({ xp: 12, coins: 3 });
-      sfx.correct(); if (isNew) setTimeout(sfx.catch, 250);
-      msg = `${isNew ? `📕 ${josa(c.name, '을/를')} 도감에 새로 등록했다!` : `${josa(c.name, '이/가')} 반갑게 인사하고 돌아갔어요.`}  ✨경험치 +12${r.coins ? `  🪙+${r.coins}` : ''}`;
+      const r = reward({ xp: rare ? 20 : 12, coins: rare ? 6 : 3 });
+      sfx.correct(); if (isNew || newMon) setTimeout(sfx.catch, 250);
+      msg = [newMon ? `⚪ ${josa(mname, '을/를')} 포켓몬 도감에 등록했다!` : `${josa(mname, '은/는')} 이미 잡은 포켓몬이에요.`,
+        isNew ? `📕 생태 도감에 「${c.name}」 등록!` : '',
+        `✨경험치 +${rare ? 20 : 12}${r.coins ? `  🪙+${r.coins}` : ''}`].filter(Boolean).join('  ');
     } else {
       e.currentTarget.classList.add('wrong');
       btns.querySelectorAll('button').forEach(b => { if (b.textContent === q.answer) b.classList.add('right'); });
       sfx.wrong();
-      msg = `${josa(c.name, '은/는')} 풀숲으로 도망쳤다… 설명을 읽고 다음엔 꼭 맞혀요!`;
+      msg = `${josa(mname, '은/는')} 풀숲으로 도망쳤다… 설명을 읽고 다음엔 꼭 맞혀요!`;
     }
     persist();
     const show = () => result.append(h('div', { class: `feedback ${ok ? 'ok' : 'no'}` },
@@ -252,9 +265,9 @@ function wildEncounter(id) {
     if (ok) setTimeout(show, 1700); else show();
   } }, label)));
   openModal(h('div', { class: 'wild' },
-    h('div', { class: 'wild-intro' }, `야생의 ${josa(c.name, '이/가')} 나타났다!`),
-    h('div', { class: `wild-arena wild-${MAPS[save.pos.map].bg}` }, h('div', { class: 'wild-img bounce-in' }, creatureImg(id)),
-      h('div', { class: 'name-plate' }, h('div', { class: 'np-main' }, c.name), h('div', { class: 'np-sub' }, `닮은 포켓몬: ${c.pname}`))),
+    h('div', { class: 'wild-intro' }, `${rare ? '✨ 희귀한 ' : ''}야생의 ${josa(mname, '이/가')} 나타났다!`),
+    h('div', { class: `wild-arena wild-${MAPS[save.pos.map].bg} ${rare ? 'rare' : ''}` }, h('div', { class: 'wild-img bounce-in' }, pokeImg(mon, c.emoji)),
+      h('div', { class: 'name-plate' }, h('div', { class: 'np-main' }, `${mname}${save.mons.includes(mon) ? ' ⚪' : ''}`), h('div', { class: 'np-sub' }, `닮은 실제 생물: ${c.name}`))),
     h('div', { class: 'battle-prompt', html: q.q }), btns, result), { locked: true });
 }
 
@@ -360,4 +373,22 @@ function buddyView() {
   } }, partnerImg('buddy-img'));
   buddyTimer = setInterval(() => { if (!document.body.contains(bubble)) { clearInterval(buddyTimer); return; } bubble.textContent = pick(BUDDY_TIPS); }, 14000);
   return h('div', { class: 'buddy' }, bubble, h('div', { class: 'buddy-body' }, hearts, pet, love));
+}
+
+/* ---------- 🐾 지도 위를 돌아다니는 야생 포켓몬 ---------- */
+let roamers = [];
+function spawnRoamers(grid, m) {
+  roamers = [];
+  const spots = [];
+  m.rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ENCOUNTER_TILES.has(ch) && !(x === save.pos.x && y === save.pos.y)) spots.push([x, y]); }));
+  const n = Math.min(spots.length, 3 + Math.floor(Math.random() * 3));
+  shuffle(spots).slice(0, n).forEach(([x, y]) => {
+    const org = pickWild(save.pos.map);
+    const mon = wildPokemonFor(org);
+    const rare = isRareMon(org, mon);
+    const el = h('div', { class: `roamer ${rare ? 'rare' : ''}`, style: { '--x': x, '--y': y, zIndex: y * 10 + 4, animationDelay: `${Math.random() * -2}s` } },
+      pokeImg(mon, CREATURES[org].emoji, 'roamer-img'), rare ? h('span', { class: 'roamer-spark' }, '✨') : null);
+    grid.appendChild(el);
+    roamers.push({ x, y, org, mon, el });
+  });
 }

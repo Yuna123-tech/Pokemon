@@ -21,7 +21,7 @@ function renderTitle() {
     h('button', { class: 'profile-btn new', onclick: () => { sfx.click(); renderNewTrainer(); } }, h('span', { class: 'emoji-img profile-img' }, '➕'), h('b', null, '새 트레이너')));
 
   const parade = h('div', { class: 'title-parade' },
-    ...[25, 273, 7, 656, 590, 663, 417].map((p, i) => { const im = pokeImg(p, '⭐', 'parade-img'); im.style.animationDelay = `${i * 0.18}s`; return im; }));
+    ...shuffle(Object.keys(POKE_NAMES).map(Number)).slice(0, 7).map((p, i) => { const im = pokeImg(p, '⭐', 'parade-img'); im.style.animationDelay = `${i * 0.18}s`; return im; }));
 
   app.appendChild(h('section', { class: 'screen title-screen' },
     h('div', { class: 'title-card' },
@@ -117,7 +117,7 @@ function partnerHud() {
     h('div', { class: 'hud-info' },
       h('div', { class: 'hud-name' }, `${save.name} · ${info.name} `, h('span', { class: 'lv' }, `Lv.${info.level}`)),
       h('div', { class: 'xp-bar' }, h('div', { class: 'xp-fill', style: { width: pct + '%' } })),
-      h('div', { class: 'hud-sub' }, h('span', { class: 'title-tag' }, `🏷️ ${save.title}`), h('span', null, `🪙 ${save.coins}`), h('span', null, `📕 ${save.dex.length}/${DEX_IDS.length}`))));
+      h('div', { class: 'hud-sub' }, h('span', { class: 'title-tag' }, `🏷️ ${save.title}`), h('span', null, `🪙 ${save.coins}`), h('span', null, `📕 ${save.dex.length}/${DEX_IDS.length}`), h('span', null, `⚪ ${save.mons.length}/${ALL_MONS.length}`))));
 }
 
 /* =========================================================
@@ -180,7 +180,7 @@ function renderCenter() {
         stat('맞힌 문제', `${s.correct}개`), stat('정답률', `${rate}%`), stat('도감', `${save.dex.length}/${DEX_IDS.length}`),
         stat('체육관 배지', `${Object.keys(save.cleared).filter(k => k !== '6').length}/5`),
         stat('라운드전 최고', `${s.roundBest}라운드`), stat('스피드 최고', `${s.speedBest}점`),
-        stat('대결 승리', `${s.duelWins}번`), stat('모은 코인', `${s.totalCoins}`)),
+        stat('대결 승리', `${s.duelWins}번`), stat('모은 코인', `${s.totalCoins}`), stat('잡은 포켓몬', `${save.mons.length}/${ALL_MONS.length}`)),
       h('div', { class: 'row-btns' },
         h('button', { class: 'btn small', onclick: () => { exportProfile(); toast('💾 기록 파일을 내려받았어요. 잘 보관해요!'); } }, '💾 내 기록 파일로 저장'),
         (() => {
@@ -332,7 +332,7 @@ function tRank(body) {
   const rows = {};
   Object.values(store.profiles).forEach(p => { rows[p.name] = Object.assign(rankingSummary(p), { src: '이 기기' }); });
   Object.values(device.ranking).forEach(r => { if (!rows[r.name] || rows[r.name].src !== '이 기기') rows[r.name] = Object.assign({}, r, { src: '코드' }); });
-  const sortKeys = { lv: '레벨', correct: '맞힌 문제', dex: '도감', stars: '별', round: '라운드전', speed: '스피드', duel: '대결 승', coins: '모은 코인' };
+  const sortKeys = { lv: '레벨', mon: '포켓몬 수집', correct: '맞힌 문제', dex: '도감', stars: '별', round: '라운드전', speed: '스피드', duel: '대결 승', coins: '모은 코인' };
   const sel = h('select', { class: 'select' }, ...Object.entries(sortKeys).map(([k, v]) => h('option', { value: k }, `${v} 순`)));
   const table = h('div');
   const draw = () => {
@@ -341,12 +341,12 @@ function tRank(body) {
     clear(table);
     table.appendChild(h('table', { class: 'rank-table' },
       h('thead', null, h('tr', null, h('th', null, '순위'), h('th', null, '이름'), h('th', null, '레벨'), h('th', null, '맞힌'), h('th', null, '정답률'),
-        h('th', null, '도감'), h('th', null, '별'), h('th', null, '라운드'), h('th', null, '스피드'), h('th', null, '대결'), h('th', null, '코인'))),
+        h('th', null, '도감'), h('th', null, '포켓몬'), h('th', null, '별'), h('th', null, '라운드'), h('th', null, '스피드'), h('th', null, '대결'), h('th', null, '코인'))),
       h('tbody', null, ...list.map((r, i) => h('tr', null,
         h('td', null, i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1),
         h('td', { class: 'rank-name' }, pokeImg(r.poke, '⚪', 'rank-img'), r.name, r.src === '코드' ? h('span', { class: 'muted' }, ' (코드)') : null),
         h('td', null, r.lv), h('td', null, r.correct), h('td', null, r.answered ? Math.round(r.correct / r.answered * 100) + '%' : '-'),
-        h('td', null, r.dex), h('td', null, r.stars), h('td', null, r.round), h('td', null, r.speed), h('td', null, r.duel), h('td', null, r.coins))))));
+        h('td', null, r.dex), h('td', null, r.mon || 0), h('td', null, r.stars), h('td', null, r.round), h('td', null, r.speed), h('td', null, r.duel), h('td', null, r.coins))))));
     if (!list.length) table.appendChild(h('p', { class: 'muted' }, '아직 기록이 없어요.'));
   };
   sel.addEventListener('change', draw);

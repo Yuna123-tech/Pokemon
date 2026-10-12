@@ -48,7 +48,7 @@ function modeRound() {
 function runRound(topics) {
   inStage = true;
   const pool = getQuestions({ topics, count: 300 });
-  let qi = 0, round = 1, hearts = 3, hits = 0, correct = 0, challenger = pick(DEX_IDS);
+  let qi = 0, round = 1, hearts = 3, hits = 0, correct = 0, challenger = pick(DEX_IDS), foeMon = wildPokemonFor(challenger);
   showTopbar('🏆 라운드 아레나');
 
   const ask = () => {
@@ -74,8 +74,8 @@ function runRound(topics) {
     const arena = h('div', { class: 'round-arena' },
       h('div', { class: 'fighter me' }, partnerImg('fighter-img'), h('div', { class: 'fighter-name' }, partnerInfo().name)),
       h('div', { class: 'vs' }, 'VS'),
-      h('div', { class: 'fighter foe' }, creatureImg(challenger, 'fighter-img'),
-        h('div', { class: 'fighter-name' }, `야생의 ${CREATURES[challenger].name}`),
+      h('div', { class: 'fighter foe' }, pokeImg(foeMon, CREATURES[challenger].emoji, 'fighter-img'),
+        h('div', { class: 'fighter-name' }, `야생의 ${POKE_NAMES[foeMon]}`),
         h('div', { class: 'pips' }, ...[0, 1, 2].map(i => h('span', { class: i < hits ? 'off' : '' }, '●')))));
     const info = h('div', { class: 'feedback-slot' });
     const after = ok => {
@@ -85,7 +85,7 @@ function runRound(topics) {
         h('button', { class: 'btn primary', onclick: e => {
           e.currentTarget.disabled = true; sfx.click();
           if (hearts <= 0) return finish();
-          if (hits >= 3) { reward({ coins: 2 + round, xp: 10 }); round++; hits = 0; challenger = pick(DEX_IDS); }
+          if (hits >= 3) { reward({ coins: 2 + round, xp: 10 }); registerMon(foeMon); toast(`⚪ ${POKE_NAMES[foeMon]}${josa(POKE_NAMES[foeMon], '을/를').slice(-1)} 이겼다! 포켓몬 도감 등록`); round++; hits = 0; challenger = pick(DEX_IDS); foeMon = wildPokemonFor(challenger); }
           ask();
         } }, hearts <= 0 ? '결과 보기 ▶' : '다음 ▶')));
       info.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -225,8 +225,8 @@ function modeDuel() {
         h('button', { class: 'btn primary big', onclick: () => {
           const mk = (sel, guest) => {
             if (sel.value) { const pi = partnerInfo(null, store.profiles[sel.value]); return { name: sel.value, profile: sel.value, poke: pi.poke, pname: pi.name }; }
-            const st = STARTERS[pick(Object.keys(STARTERS))];
-            return { name: guest.value.trim() || '손님', profile: null, poke: st.line[0], pname: st.names[0] };
+            const gp = pick(Object.keys(POKE_NAMES).map(Number));
+            return { name: guest.value.trim() || '손님', profile: null, poke: gp, pname: POKE_NAMES[gp] };
           };
           const a = mk(p1, g1), b = mk(p2, g2);
           if (a.profile && a.profile === b.profile) { toast('두 플레이어가 같은 트레이너예요!'); return; }
@@ -486,7 +486,7 @@ function runMemory() {
   const pairs = shuffle(MEMORY_PAIRS).slice(0, 6);
   const cards = shuffle(pairs.flatMap((p, i) => [{ pair: i, text: p[0], kind: 'term' }, { pair: i, text: p[1], kind: 'def' }]));
   let open = [], matched = 0, moves = 0, busy = false;
-  const backs = [25, 7, 1, 4, 133, 172];
+  const backs = shuffle(ALL_MONS).slice(0, 6);
   clear(app);
   const movesEl = h('span');
   const grid = h('div', { class: 'memory-grid' });
