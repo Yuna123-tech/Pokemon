@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>포켓몬 생태계 탐험대</title>
+  <meta name="description" content="초등학교 4학년 과학 '생물과 환경' 단원을 포켓몬과 함께 배우는 비영리 교육용 팬 게임">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 상단 바 -->
+  <header id="topbar" class="hidden">
+    <button class="icon-btn" id="btn-home" title="지도로">🗺️</button>
+    <div id="topbar-title">포켓몬 생태계 탐험대</div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="btn-dex" title="생태 도감">📕</button>
+      <button class="icon-btn" id="btn-sound" title="소리 켜기/끄기">🔊</button>
+      <button class="icon-btn" id="btn-info" title="저작권 안내">ⓘ</button>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <!-- 모달 -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close" aria-label="닫기">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <footer id="legal-strip">
+    비영리 교육용 팬 게임 · 포켓몬 관련 저작권은 Nintendo · Creatures · GAME FREAK · The Pokémon Company에 있으며 제작자에게는 저작권이 없습니다.
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
