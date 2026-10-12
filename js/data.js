@@ -239,3 +239,186 @@ const STAGES = [
   { id: 6, name: '챔피언 리그',   leader: '챔피언 뮤', avatar: '✨', badge: '🏆', badgeName: '생태 마스터 트로피',
     topic: '단원 정리 퀴즈', pages: '과학 60~61쪽', color: '#e53935', poke: 151 },
 ];
+
+/* =========================================================
+   내 파트너 포켓몬 (레벨업 · 진화)
+   line: 진화 단계별 도감 번호, names: 단계별 이름
+   ========================================================= */
+const EVOLVE_LEVELS = [7, 15];   // Lv 7에 1차 진화, Lv 15에 2차 진화
+const MAX_LEVEL = 30;
+const STARTERS = {
+  bulbasaur:  { line: [1, 2, 3],       names: ['이상해씨', '이상해풀', '이상해꽃'], type: '풀',   emoji: '🌱',
+                desc: '등의 씨앗이 햇빛을 받아 자라요. 생산자처럼 햇빛을 좋아해요!' },
+  charmander: { line: [4, 5, 6],       names: ['파이리', '리자드', '리자몽'],       type: '불꽃', emoji: '🔥',
+                desc: '꼬리의 불꽃이 힘을 나타내요. 숲에서는 불조심!' },
+  squirtle:   { line: [7, 8, 9],       names: ['꼬부기', '어니부기', '거북왕'],     type: '물',   emoji: '💧',
+                desc: '바다거북을 닮았어요. 바다 쓰레기를 싫어해요!' },
+  pichu:      { line: [172, 25, 26],   names: ['피츄', '피카츄', '라이츄'],         type: '전기', emoji: '⚡',
+                desc: '숲에 사는 전기 쥐 포켓몬. 에너지 절약을 응원해요!' },
+  turtwig:    { line: [387, 388, 389], names: ['모부기', '수풀부기', '토대부기'],   type: '풀',   emoji: '🌳',
+                desc: '토대부기의 등에는 나무가 자라 작은 생태계가 된대요!' },
+  chikorita:  { line: [152, 153, 154], names: ['치코리타', '베이리프', '메가니움'], type: '풀',   emoji: '🍃',
+                desc: '머리의 잎사귀로 햇빛을 모아요.' },
+  caterpie:   { line: [10, 11, 12],    names: ['캐터피', '단데기', '버터플'],       type: '벌레', emoji: '🐛',
+                desc: '애벌레 → 번데기 → 나비로 변해요. 먹이그물 속 애벌레를 닮았어요!' },
+  eevee:      { line: [133, 'branch', 'branch'], names: ['이브이', '', ''],         type: '노말', emoji: '🦊',
+                desc: '진화할 때 리피아·샤미드·부스터 중 하나를 고를 수 있어요!',
+                branches: [ { id: 470, name: '리피아', icon: '🍃' }, { id: 134, name: '샤미드', icon: '💧' }, { id: 136, name: '부스터', icon: '🔥' } ] },
+};
+
+/* ---------- 상점 ---------- */
+const SHOP_ITEMS = [
+  { id: 'xpcandy',  icon: '🍬', name: '경험치 사탕', price: 30,  kind: 'item',  desc: '파트너 경험치 +40' },
+  { id: 'candy',    icon: '🍭', name: '이상한 사탕', price: 100, kind: 'item',  desc: '파트너 레벨 +1' },
+  { id: 'adopt',    icon: '🥚', name: '새 파트너 입양', price: 300, kind: 'adopt', desc: '아직 없는 파트너 포켓몬을 데려와요' },
+  { id: 'theme-forest', icon: '🌲', name: '배경: 깊은 숲',   price: 80, kind: 'theme', value: 'forest' },
+  { id: 'theme-sea',    icon: '🌊', name: '배경: 푸른 바다', price: 80, kind: 'theme', value: 'sea' },
+  { id: 'theme-night',  icon: '🌌', name: '배경: 별밤',     price: 120, kind: 'theme', value: 'night' },
+  { id: 'theme-sakura', icon: '🌸', name: '배경: 벚꽃길',   price: 120, kind: 'theme', value: 'sakura' },
+  { id: 'title-web',    icon: '🕸️', name: '칭호: 먹이그물 박사', price: 150, kind: 'title', value: '먹이그물 박사' },
+  { id: 'title-fungi',  icon: '🍄', name: '칭호: 분해자의 친구', price: 150, kind: 'title', value: '분해자의 친구' },
+  { id: 'title-green',  icon: '♻️', name: '칭호: 지구 지킴이',   price: 200, kind: 'title', value: '지구 지킴이' },
+];
+const THEMES = {
+  basic:  { name: '기본',   css: 'linear-gradient(180deg,#e3f2fd,#fff)' },
+  forest: { name: '깊은 숲', css: 'linear-gradient(180deg,#a5d6a7,#2e7d32)' },
+  sea:    { name: '푸른 바다', css: 'linear-gradient(180deg,#b3e5fc,#0277bd)' },
+  night:  { name: '별밤',   css: 'radial-gradient(circle at 30% 20%,#fff 0 1px,transparent 2px) 0 0/40px 40px, linear-gradient(180deg,#1a237e,#4a148c)' },
+  sakura: { name: '벚꽃길', css: 'radial-gradient(circle,#f8bbd0 0 4px,transparent 5px) 0 0/36px 36px, linear-gradient(180deg,#fce4ec,#f48fb1)' },
+};
+// 스토리 스테이지를 깨면 받는 칭호
+const STAGE_TITLES = { 1: '생태계 탐험가', 2: '역할 분류왕', 3: '먹이사슬 고수', 4: '오염 해결사', 5: '바다 지킴이', 6: '생태 마스터' };
+
+/* ---------- 교과서에 나온 먹이 관계 (과학 48~49쪽, 61쪽, 실험관찰 25쪽) ---------- */
+const TEXTBOOK_EDGES = [
+  ['grass', 'grasshopper'], ['grasshopper', 'frog'], ['grasshopper', 'duck'], ['frog', 'duck'],
+  ['duck', 'hawk'], ['duck', 'weasel'], ['frog', 'snake'], ['frog', 'hawk'], ['bulbul', 'hawk'],
+  ['weasel', 'hawk'], ['oak', 'squirrel'], ['clover', 'rabbit'], ['snake', 'hawk'], ['rabbit', 'hawk'],
+];
+
+/* ---------- 기억력 카드 짝 (모두 교과서 낱말과 뜻) ---------- */
+const MEMORY_PAIRS = [
+  ['생태계', '서로 영향을 주고받는 생물 요소와 비생물 요소'],
+  ['생물 요소', '살아 있는 것 (동물, 식물 등)'],
+  ['비생물 요소', '햇빛, 물, 공기, 흙'],
+  ['생산자', '햇빛 등을 이용해 스스로 양분을 만듦'],
+  ['소비자', '다른 생물을 먹이로 하여 살아감'],
+  ['분해자', '죽은 생물체나 배출물을 분해함'],
+  ['먹이사슬', '먹고 먹히는 관계가 사슬처럼 연결됨'],
+  ['먹이그물', '여러 먹이사슬이 그물처럼 얽힘'],
+  ['환경오염', '환경이 더러워지거나 훼손되는 현상'],
+  ['서식지', '생물이 일정하게 자리 잡고 사는 곳'],
+  ['미세 플라스틱', '크기 5 mm 이하의 작은 플라스틱'],
+  ['생태통로', '동물이 이동할 수 있게 만든 길'],
+  ['대기오염', '자동차나 공장의 매연'],
+  ['수질오염', '생활 하수, 공장 폐수, 기름 유출'],
+  ['토양오염', '농약의 지나친 사용, 쓰레기'],
+  ['밀렵', '허가를 받지 않고 몰래 사냥하는 것'],
+  ['텃새', '계절에 따라 이동하지 않고 한곳에 머무는 새'],
+];
+
+/* =========================================================
+   탐험 맵 (15칸 × 11줄)
+   T 나무  . 풀밭  = 길  , 풀숲(야생 생물 등장)  W 물  S 모래  F 꽃  R 바위
+   J 쓰레기(주우면 코인)  N 안내판  @ 시작 위치
+   건물: G 체육관 길  A 라운드 아레나  P 스피드 트랙  D 대결장  K 팀전 경기장
+         M 기억력 카드  H 상점  C 포켓몬센터  X 환전소
+   출구: < > ^ v  (exits 에서 어디로 가는지 정해요)
+   ========================================================= */
+const MAPS = {
+  town: {
+    name: '생태 마을', bg: 'town',
+    rows: [
+      'TTTTTTT^TTTTTTT',
+      'TFF..G.=.D..FFT',
+      'T,,..=.=.=..,,T',
+      'T,,C.=.=.=.H,,T',
+      'T..===N===...TT',
+      '<======@======>',
+      'T..=.=====.=..T',
+      'T..X.=.F.=.A..T',
+      'TFF..P...K..FFT',
+      'T,,...M.....,,T',
+      'TTTTTTTTTTTTTTT',
+    ],
+    exits: { '<': { map: 'forest', x: 13, y: 5 }, '>': { map: 'beach', x: 1, y: 5 }, '^': { map: 'river', x: 7, y: 9 } },
+    signs: { N: '🪧 생태 마을에 온 걸 환영해요! 왼쪽은 숲길, 오른쪽은 해변, 위쪽은 강가예요. 풀숲(🌾)에 들어가면 야생 생물을 만날 수 있어요.' },
+    pool: ['grass', 'clover', 'grasshopper', 'rabbit', 'tit', 'caterpillar'],
+  },
+  forest: {
+    name: '숲길', bg: 'forest',
+    rows: [
+      'TTTTTTTTTTTTTTT',
+      'T,,,,T...T,,,,T',
+      'T,,,,..N..,,,,T',
+      'TT,,...T...,,TT',
+      'T...,,,T,,,...T',
+      'T.,,,,...,,,,.>',
+      'T..,,TT.TT,,..T',
+      'TT...,,,,,...TT',
+      'T,,,T..R..T,,,T',
+      'T,,,,,...,,,,,T',
+      'TTTTTTTTTTTTTTT',
+    ],
+    exits: { '>': { map: 'town', x: 1, y: 5 } },
+    signs: { N: '🪧 숲 생태계: 상수리나무, 다람쥐, 버섯 같은 생물 요소와 햇빛, 공기, 흙 같은 비생물 요소가 서로 영향을 주고받아요.' },
+    pool: ['oak', 'squirrel', 'bulbul', 'snake', 'frog', 'beetle', 'mole', 'mushroom', 'mold', 'cornel', 'weasel', 'hawk', 'caterpillar'],
+  },
+  river: {
+    name: '강가', bg: 'river',
+    rows: [
+      'TTTTTTTTTTTTTTT',
+      'T,,,..N...,,,,T',
+      'T,,,.......,,,T',
+      'WWWWWWW=WWWWWWW',
+      'WWWWWWW=WWWWWWW',
+      'T,,,...=...,,,T',
+      'T..,,..=..,,..T',
+      'TFF..,,=,,..FFT',
+      'T,,....=....,,T',
+      'T.....,=,.....T',
+      'TTTTTTTvTTTTTTT',
+    ],
+    exits: { v: { map: 'town', x: 7, y: 1 } },
+    signs: { N: '🪧 강 생태계: 붕어마름(생산자), 붕어·오리·왜가리(소비자)와 물, 햇빛, 흙(비생물 요소)이 함께 있어요.' },
+    pool: ['waterweed', 'duck', 'heron', 'crucian', 'snail', 'frog', 'hawk'],
+  },
+  beach: {
+    name: '해변', bg: 'beach',
+    rows: [
+      'WWWWWWWWWWWWWWW',
+      'WWWWWWWWWWWWWWW',
+      'WW,,,WWWWW,,,WW',
+      'S,,,,,SSS,,,,,S',
+      'SSJSSSSNSSSSJSS',
+      '<SSSSSSSSSSSSSS',
+      'SSSSJSSSSSSJSSS',
+      'S..SSSSSSSSS..S',
+      'TF.,,..J..,,.FT',
+      'T..,,.....,,..T',
+      'TTTTTTTTTTTTTTT',
+    ],
+    exits: { '<': { map: 'town', x: 13, y: 5 } },
+    signs: { N: '🪧 바다거북 10마리 중 8마리가 플라스틱 쓰레기를 먹은 것으로 나타났어요. 해변의 쓰레기(🥤)를 주워 바다를 지켜 주세요!' },
+    pool: ['gull', 'dolphin', 'turtle', 'jelly', 'coral', 'crab', 'ray', 'mackerel', 'seaweed'],
+  },
+};
+const BUILDINGS = {
+  G: { icon: '🏟️', name: '체육관 길',   go: 'story' },
+  A: { icon: '🏆', name: '라운드 아레나', go: 'round' },
+  P: { icon: '⏱️', name: '스피드 트랙',   go: 'speed' },
+  D: { icon: '⚔️', name: '대결장',       go: 'duel' },
+  K: { icon: '👥', name: '팀전 경기장',   go: 'team' },
+  M: { icon: '🃏', name: '기억력 카드',   go: 'memory' },
+  H: { icon: '🏪', name: '상점',         go: 'shop' },
+  C: { icon: '🏥', name: '포켓몬센터',    go: 'center' },
+  X: { icon: '💱', name: '환전소',       go: 'exchange' },
+};
+
+const TOPICS = {
+  1: { name: '생태계 구성 요소', icon: '🌳', pages: '42~45쪽' },
+  2: { name: '생산자·소비자·분해자', icon: '🍄', pages: '46~47쪽' },
+  3: { name: '먹이사슬·먹이그물', icon: '🕸️', pages: '48~49쪽' },
+  4: { name: '환경오염', icon: '🌫️', pages: '50~51쪽' },
+  5: { name: '생태계 보전', icon: '🐢', pages: '52~59쪽' },
+};

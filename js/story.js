@@ -1,310 +1,17 @@
 /* =========================================================
-   포켓몬 생태계 탐험대 - 게임 로직
+   포켓몬 생태계 탐험대 - 체육관 스토리 모드 (교과서 순서대로 6개 스테이지)
    ========================================================= */
-(() => {
 'use strict';
-
-/* ---------- 저장 ---------- */
-const SAVE_KEY = 'ecoPokemonExplorer.v1';
-const DEFAULT_SAVE = { name: '', cleared: {}, dex: [], pledge: '', teacher: false, sound: true };
-let save = loadSave();
-
-function loadSave() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) return Object.assign({}, DEFAULT_SAVE, JSON.parse(raw));
-  } catch (e) { /* 저장소를 쓸 수 없는 환경 */ }
-  return Object.assign({}, DEFAULT_SAVE, { cleared: {}, dex: [] });
-}
-function persist() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* 무시 */ }
-}
-
-/* ---------- 도우미 ---------- */
-const app = document.getElementById('app');
-
-function h(tag, attrs, ...children) {
-  const node = document.createElement(tag);
-  if (attrs) {
-    for (const [k, v] of Object.entries(attrs)) {
-      if (v === null || v === undefined || v === false) continue;
-      if (k === 'class') node.className = v;
-      else if (k === 'html') node.innerHTML = v;
-      else if (k === 'style' && typeof v === 'object') Object.assign(node.style, v);
-      else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v);
-      else node.setAttribute(k, v);
-    }
-  }
-  for (const c of children.flat()) {
-    if (c === null || c === undefined || c === false) continue;
-    node.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
-  }
-  return node;
-}
-
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-// 한국어 조사: josa('사과', '을/를') → '사과를'
-function josa(word, pair) {
-  const [withJong, noJong] = pair.split('/');
-  const base = word.replace(/\(.*?\)/g, '').trim();
-  const ch = base.charCodeAt(base.length - 1);
-  if (ch < 0xAC00 || ch > 0xD7A3) return word + noJong;
-  const jong = (ch - 0xAC00) % 28;
-  if (pair === '으로/로') return word + (jong === 0 || jong === 8 ? '로' : '으로');
-  return word + (jong ? withJong : noJong);
-}
-
-function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
-
-/* ---------- 포켓몬 이미지 (실패 시 다음 주소 → 이모지) ---------- */
-function pokeImg(pokeId, emoji, cls = '') {
-  if (!pokeId) return h('span', { class: `emoji-img ${cls}`, role: 'img' }, emoji || '❔');
-  let idx = 0;
-  const img = h('img', { class: `poke-img ${cls}`, alt: '', draggable: 'false', loading: 'eager' });
-  img.addEventListener('error', () => {
-    idx++;
-    if (idx < IMG_SOURCES.length) img.src = IMG_SOURCES[idx](pokeId);
-    else img.replaceWith(h('span', { class: `emoji-img ${cls}`, role: 'img' }, emoji || '❔'));
-  });
-  img.src = IMG_SOURCES[0](pokeId);
-  return img;
-}
-function creatureImg(id, cls = '') {
-  const c = CREATURES[id];
-  return pokeImg(c.poke, c.emoji, cls);
-}
-
-/* ---------- 소리 (Web Audio) ---------- */
-let audioCtx = null;
-function tone(freqs, dur = 0.12, type = 'square', gap = 0.09, vol = 0.06) {
-  if (!save.sound) return;
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    freqs.forEach((f, i) => {
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = type; o.frequency.value = f;
-      const t = audioCtx.currentTime + i * gap;
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g).connect(audioCtx.destination);
-      o.start(t); o.stop(t + dur + 0.02);
-    });
-  } catch (e) { /* 소리 미지원 */ }
-}
-const sfx = {
-  click:   () => tone([660], 0.05, 'square', 0, 0.03),
-  correct: () => tone([784, 1047], 0.13),
-  wrong:   () => tone([220, 165], 0.18, 'sawtooth', 0.12, 0.05),
-  catch:   () => tone([523, 659, 784, 1047], 0.1, 'square', 0.08),
-  clear:   () => tone([523, 523, 523, 698, 880, 784, 1047], 0.14, 'square', 0.13),
-  pop:     () => tone([900], 0.06, 'triangle', 0, 0.06),
-};
-
-/* ---------- 상단 바 / 모달 ---------- */
-const topbar = document.getElementById('topbar');
-const topTitle = document.getElementById('topbar-title');
-const modal = document.getElementById('modal');
-const modalBody = document.getElementById('modal-body');
-
-function showTopbar(title) {
-  topbar.classList.remove('hidden');
-  topTitle.textContent = title;
-}
-function hideTopbar() { topbar.classList.add('hidden'); }
-
-function openModal(content) {
-  clear(modalBody);
-  modalBody.appendChild(content);
-  modal.classList.remove('hidden');
-}
-function closeModal() { modal.classList.add('hidden'); }
-document.getElementById('modal-close').addEventListener('click', closeModal);
-modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-document.getElementById('btn-home').addEventListener('click', () => {
-  if (inStage && !confirm('지금 하던 스테이지를 그만두고 지도로 돌아갈까요?')) return;
-  renderMap();
-});
-document.getElementById('btn-dex').addEventListener('click', () => openModal(dexView()));
-document.getElementById('btn-info').addEventListener('click', () => openModal(copyrightView()));
-const soundBtn = document.getElementById('btn-sound');
-function syncSoundBtn() { soundBtn.textContent = save.sound ? '🔊' : '🔇'; }
-soundBtn.addEventListener('click', () => { save.sound = !save.sound; persist(); syncSoundBtn(); sfx.click(); });
-syncSoundBtn();
-
-/* ---------- 저작권 안내 ---------- */
-function copyrightView() {
-  return h('div', { class: 'legal' },
-    h('h2', null, '📢 저작권 안내'),
-    h('p', null, h('b', null, '이 게임은 초등학교 수업을 위해 만든 비영리 팬 게임(Fan Game)입니다.')),
-    h('ul', null,
-      h('li', null, '포켓몬스터(Pokémon)의 이름, 캐릭터, 이미지에 대한 모든 저작권과 상표권은 ',
-        h('b', null, 'Nintendo, Creatures Inc., GAME FREAK inc., The Pokémon Company'),
-        '(한국: 포켓몬코리아)에 있습니다.'),
-      h('li', null, h('b', null, '이 게임의 제작자에게는 포켓몬 관련 저작권이 없으며'), ', 공식 회사와 아무런 관련이 없습니다.'),
-      h('li', null, '어떠한 상업적 목적(판매, 광고 수익 등)으로도 사용하지 않으며, 교실 학습용으로만 사용합니다.'),
-      h('li', null, '포켓몬 이미지는 파일로 포함하지 않고, 공개 저장소(PokeAPI)에서 화면에 불러와 보여 줍니다.'),
-      h('li', null, '학습 내용은 초등학교 4학년 2학기 과학 「2. 생물과 환경」 단원을 참고하였습니다.'),
-      h('li', null, '저작권자의 요청이 있으면 즉시 게시를 중단하겠습니다.'),
-    ),
-    h('p', { class: 'legal-en' },
-      'This is a non-commercial, educational fan game. Pokémon and all related names, characters and images are ' +
-      '© Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company. The creator claims no copyright and is ' +
-      'not affiliated with them.'),
-  );
-}
-
-/* ---------- 도감 ---------- */
-const DEX_IDS = Object.keys(CREATURES).filter(id => CREATURES[id].living && CREATURES[id].poke);
-
-function registerDex(id) {
-  const c = CREATURES[id];
-  if (!c || !c.living || !c.poke) return false;
-  if (save.dex.includes(id)) return false;
-  save.dex.push(id); persist();
-  return true;
-}
-
-function dexView() {
-  const grid = h('div', { class: 'dex-grid' });
-  DEX_IDS.forEach(id => {
-    const c = CREATURES[id];
-    const caught = save.dex.includes(id);
-    const cell = h('button', { class: `dex-cell ${caught ? 'caught' : 'unknown'}`,
-      onclick: () => { if (caught) { sfx.click(); openModal(dexDetail(id)); } } },
-      creatureImg(id, 'dex-img'),
-      h('div', { class: 'dex-name' }, caught ? c.name : '???'),
-    );
-    grid.appendChild(cell);
-  });
-  return h('div', null,
-    h('h2', null, `📕 생태 도감  ${save.dex.length} / ${DEX_IDS.length}`),
-    h('p', { class: 'muted' }, '퀴즈를 맞히면 생물이 도감에 등록돼요. 등록된 생물을 눌러 보세요!',
-      save.dex.length < DEX_IDS.length ? ' (💡 STAGE 1 「생태계 숲길」을 다시 하면 새로운 생물을 만날 수 있어요.)' : ' 🎉 도감 완성!'),
-    grid);
-}
-
-function dexDetail(id) {
-  const c = CREATURES[id];
-  const role = ROLE_INFO[c.role];
-  const eats = WEB_EDGES.filter(e => e[1] === id).map(e => CREATURES[e[0]].name);
-  const eatenBy = WEB_EDGES.filter(e => e[0] === id).map(e => CREATURES[e[1]].name);
-  return h('div', { class: 'dex-detail' },
-    h('div', { class: 'dex-detail-img' }, creatureImg(id)),
-    h('h2', null, c.name),
-    h('p', { class: 'muted' }, `닮은 포켓몬: ${c.pname} (No.${String(c.poke).padStart(4, '0')})`),
-    h('div', { class: 'chips' },
-      h('span', { class: `chip role-${c.role}` }, `${role.icon} ${role.label}`),
-      h('span', { class: 'chip' }, `📍 ${c.hab}`)),
-    h('p', null, c.fact),
-    eats.length ? h('p', null, h('b', null, '🍴 먹는 것: '), eats.join(', ')) : null,
-    eatenBy.length ? h('p', null, h('b', null, '⚠️ 먹히는 상대: '), eatenBy.join(', ')) : null,
-    h('button', { class: 'btn small', onclick: () => openModal(dexView()) }, '← 도감으로'),
-  );
-}
-
-/* =========================================================
-   화면 1: 타이틀
-   ========================================================= */
-let inStage = false;
-
-function renderTitle() {
-  inStage = false;
-  hideTopbar();
-  clear(app);
-  const input = h('input', { id: 'name-input', type: 'text', maxlength: '10', placeholder: '이름을 입력하세요', value: save.name || '' });
-  const start = () => {
-    const name = input.value.trim();
-    if (!name) { input.focus(); input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 500); return; }
-    save.name = name; persist(); sfx.correct();
-    renderMap();
-  };
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') start(); });
-
-  const parade = h('div', { class: 'title-parade' },
-    ...[25, 273, 7, 656, 590, 663, 417].map((p, i) => {
-      const im = pokeImg(p, '⭐', 'parade-img');
-      im.style.animationDelay = `${i * 0.18}s`;
-      return im;
-    }));
-
-  app.appendChild(h('section', { class: 'screen title-screen' },
-    h('div', { class: 'title-card' },
-      h('div', { class: 'pokeball-logo' }),
-      h('h1', { class: 'game-title' }, '포켓몬', h('br'), h('span', null, '생태계 탐험대')),
-      h('p', { class: 'subtitle' }, '초등 과학 4학년 2학기 「2. 생물과 환경」'),
-      parade,
-      h('label', { class: 'name-label', for: 'name-input' }, '트레이너 이름'),
-      input,
-      h('button', { class: 'btn primary big', onclick: start }, '▶ 탐험 시작!'),
-      h('div', { class: 'title-links' },
-        h('button', { class: 'link-btn', onclick: () => openModal(howToView()) }, '🎮 게임 방법'),
-        h('button', { class: 'link-btn', onclick: () => openModal(dexView()) }, '📕 도감'),
-        h('button', { class: 'link-btn', onclick: () => openModal(teacherView()) }, '👩‍🏫 선생님 메뉴'),
-      ),
-      h('div', { class: 'title-legal' },
-        h('b', null, '⚠️ 비영리 교육용 팬 게임입니다.'), h('br'),
-        '포켓몬 캐릭터와 이미지의 저작권은 Nintendo · Creatures · GAME FREAK · The Pokémon Company에 있으며, ',
-        h('b', null, '제작자에게는 저작권이 없습니다.'), ' ',
-        h('button', { class: 'link-btn inline', onclick: () => openModal(copyrightView()) }, '자세히 보기')),
-    )));
-  setTimeout(() => input.focus(), 50);
-}
-
-function howToView() {
-  return h('div', null,
-    h('h2', null, '🎮 게임 방법'),
-    h('ol', { class: 'howto' },
-      h('li', null, '지도에서 스테이지를 골라요. 앞 스테이지를 깨면 다음 스테이지가 열려요.'),
-      h('li', null, '박사님과 피카츄의 설명을 잘 읽고, 관장이 내는 문제를 풀어요.'),
-      h('li', null, '정답을 맞히면 관장의 HP가 줄고, 생물이 ', h('b', null, '생태 도감'), '에 등록돼요.'),
-      h('li', null, '틀려도 괜찮아요! 설명을 읽고 나면 그 문제가 나중에 다시 나와요.'),
-      h('li', null, '배지 5개를 모으고 챔피언 뮤를 이기면 ', h('b', null, '생태 마스터 인증서'), '를 받아요!'),
-    ),
-    h('p', { class: 'note' }, '💡 포켓몬은 실제 생물을 닮은 “모델”이에요. 카드에 크게 쓰인 ', h('b', null, '실제 생물 이름'), '을 보고 생각해요.'));
-}
-
-function teacherView() {
-  const lessons = STAGES.map(s => h('tr', null,
-    h('td', null, `${s.badge} ${s.id}. ${s.name}`), h('td', null, s.topic), h('td', null, s.pages)));
-  const toggle = h('input', { type: 'checkbox', id: 'teacher-toggle' });
-  toggle.checked = !!save.teacher;
-  toggle.addEventListener('change', () => { save.teacher = toggle.checked; persist(); });
-  return h('div', null,
-    h('h2', null, '👩‍🏫 선생님 메뉴'),
-    h('table', { class: 'lesson-table' },
-      h('thead', null, h('tr', null, h('th', null, '스테이지'), h('th', null, '학습 내용'), h('th', null, '교과서'))),
-      h('tbody', null, lessons)),
-    h('label', { class: 'toggle-row' }, toggle, ' 모든 스테이지 열기 (차시별 수업용)'),
-    h('div', { class: 'row-btns' },
-      h('button', { class: 'btn danger small', onclick: () => {
-        if (!confirm('이 기기의 진행 기록(배지, 도감, 이름)을 모두 지울까요?')) return;
-        const keepSound = save.sound;
-        save = Object.assign({}, DEFAULT_SAVE, { cleared: {}, dex: [], sound: keepSound });
-        persist(); closeModal(); renderTitle();
-      } }, '🗑️ 진행 기록 초기화'),
-      h('button', { class: 'btn small', onclick: closeModal }, '닫기')),
-    h('p', { class: 'muted' }, '진행 기록은 이 기기의 브라우저에만 저장됩니다. 학생 개인정보는 어디에도 전송되지 않습니다.'));
-}
 
 /* =========================================================
    화면 2: 지도
    ========================================================= */
-function isOpen(id) { return save.teacher || id === 1 || !!save.cleared[id - 1]; }
+function isOpen(id) { return device.allOpen || id === 1 || !!save.cleared[id - 1]; }
 
 function renderMap() {
   inStage = false;
   closeModal();
-  showTopbar('탐험 지도');
+  showTopbar('🏟️ 체육관 길');
   clear(app);
   const badges = h('div', { class: 'badge-case' },
     ...STAGES.map(s => h('div', { class: `badge-slot ${save.cleared[s.id] ? 'got' : ''}`, title: s.badgeName },
@@ -335,21 +42,16 @@ function renderMap() {
   app.appendChild(h('section', { class: 'screen map-screen' },
     h('div', { class: 'map-head' },
       h('div', { class: 'trainer' },
-        pokeImg(25, '⚡', 'trainer-pika'),
+        partnerImg('trainer-pika'),
         h('div', null,
           h('div', { class: 'trainer-name' }, `${save.name || '트레이너'} 트레이너`),
           h('div', { class: 'muted' }, `도감 ${save.dex.length}/${DEX_IDS.length} · 배지 ${Object.keys(save.cleared).filter(k => k !== '6').length}/5`))),
       badges),
     route,
-    allDone ? h('button', { class: 'btn primary', onclick: renderCertificate }, '🏅 생태 마스터 인증서 보기') : null,
+    h('div', { class: 'row-btns' },
+      allDone ? h('button', { class: 'btn primary', onclick: renderCertificate }, '🏅 생태 마스터 인증서 보기') : null,
+      h('button', { class: 'btn', onclick: () => goTown() }, '🏠 마을로 돌아가기')),
   ));
-}
-
-function toast(msg) {
-  const t = h('div', { class: 'toast' }, msg);
-  document.body.appendChild(t);
-  setTimeout(() => t.classList.add('out'), 1600);
-  setTimeout(() => t.remove(), 2100);
 }
 
 /* =========================================================
@@ -427,10 +129,6 @@ function talk(lines, bg = 'bg-lab') {
   };
 }
 
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
 /* ---------- 배틀형 퀴즈 ----------
    item = {
      subject: { creature } | { poke, emoji, title, sub } | { html },
@@ -481,8 +179,8 @@ function quiz(items, opts = {}) {
       choices.forEach(label => {
         btns.appendChild(h('button', { class: 'choice-btn', onclick: e => answer(item, label, e.currentTarget, btns) }, label));
       });
+      if (item.intro) dialog.append(h('div', { class: 'battle-intro' }, item.intro));
       dialog.append(
-        item.intro ? h('div', { class: 'battle-intro' }, item.intro) : null,
         h('div', { class: 'battle-prompt', html: item.prompt }),
         btns);
     };
@@ -495,6 +193,8 @@ function quiz(items, opts = {}) {
         sfx.correct();
         btn.classList.add('right');
         solved++;
+        countAnswer(true);
+        reward({ xp: 10, coins: 2 });
         updateHp();
         let caughtMsg = null;
         const cid = item.subject && item.subject.creature;
@@ -508,6 +208,7 @@ function quiz(items, opts = {}) {
       } else {
         sfx.wrong();
         stage.mistakes++;
+        countAnswer(false);
         btn.classList.add('wrong');
         btns.querySelectorAll('button').forEach(b => { if (b.textContent === item.answer) b.classList.add('right'); });
         subjectEl && subjectEl.classList.add('shake');
@@ -531,7 +232,6 @@ function quiz(items, opts = {}) {
   };
 }
 
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function renderSubject(item) {
   const s = item.subject || {};
@@ -601,6 +301,7 @@ function chainStep(chain, idx, total) {
 
     const finish = () => {
       sfx.correct();
+      reward({ xp: 15, coins: 3 });
       hint.textContent = '🎉 먹이사슬 완성!';
       cards.remove();
       const sentence = chain.slice(0, -1).map((id, i) =>
@@ -771,6 +472,7 @@ function webStep() {
           const ok = label === m.answer;
           if (ok) {
             sfx.correct();
+            reward({ xp: 15, coins: 3 });
             btns.querySelectorAll('button').forEach(b => { b.disabled = true; });
             e.currentTarget.classList.add('right');
             missionBox.appendChild(h('div', { class: 'feedback ok' },
@@ -868,7 +570,7 @@ function cleanupStep() {
         clearInterval(spawnTimer); clearInterval(clockTimer);
         sea.querySelectorAll('.floater').forEach(f => f.remove());
         const success = score >= GOAL;
-        if (success) sfx.clear(); else { sfx.wrong(); stage.mistakes++; }
+        if (success) { sfx.clear(); reward({ xp: 20, coins: 10 }); } else { sfx.wrong(); stage.mistakes++; }
         sea.appendChild(h('div', { class: 'cu-result' },
           h('h3', null, success ? '바다가 깨끗해졌어요! 🌊✨' : '조금만 더 힘내요! 💪'),
           h('p', null, `주운 쓰레기: ${score}개`),
@@ -946,6 +648,11 @@ function stageClear() {
   const stars = m === 0 ? 3 : m <= 3 ? 2 : 1;
   const firstTime = !save.cleared[def.id];
   save.cleared[def.id] = Math.max(save.cleared[def.id] || 0, stars);
+  // 처음 깨면 큰 보상과 칭호! (하루 코인 한도와 상관없이 받아요)
+  const prize = firstTime ? 50 + stars * 10 : stars * 5;
+  const got = reward({ xp: firstTime ? 60 : 20, coins: prize, bypassCap: firstTime });
+  const newTitle = STAGE_TITLES[def.id];
+  if (firstTime && newTitle && !save.titles.includes(newTitle)) save.titles.push(newTitle);
   persist();
   inStage = false;
   sfx.clear();
@@ -959,12 +666,15 @@ function stageClear() {
       h('p', { class: 'big-text' }, `${josa(def.badgeName, '을/를')} 받았다!`),
       h('div', { class: 'stars' }, ...[1, 2, 3].map(i => h('span', { class: i <= stars ? 'on' : '' }, '★'))),
       h('p', { class: 'muted' }, m === 0 ? '한 번도 틀리지 않았어요! 완벽해요!' : `틀린 횟수: ${m}번 · 다시 도전하면 별을 더 모을 수 있어요.`),
+      h('p', { class: 'reward-line' }, `🪙 +${got.coins} 코인`, firstTime && newTitle ? ` · 🏷️ 새 칭호 「${newTitle}」` : ''),
       h('div', { class: 'row-btns' },
         def.id === 6
           ? h('button', { class: 'btn primary big', onclick: renderCertificate }, '🏅 인증서 받기')
           : (nextStage ? h('button', { class: 'btn primary', onclick: () => startStage(nextStage.id) }, `다음: ${nextStage.name} ▶`) : null),
-        h('button', { class: 'btn', onclick: renderMap }, '🗺️ 지도로'),
+        h('button', { class: 'btn', onclick: renderMap }, '🏟️ 체육관 길'),
+        h('button', { class: 'btn', onclick: () => goTown() }, '🏠 마을로'),
         firstTime ? null : h('button', { class: 'btn', onclick: () => startStage(def.id) }, '↺ 다시 하기')))));
+  setTimeout(() => flushEvents(), 900);
 }
 
 /* ---------- 인증서 ---------- */
@@ -978,7 +688,7 @@ function renderCertificate() {
   app.appendChild(h('section', { class: 'screen cert-screen' },
     h('div', { class: 'certificate', id: 'certificate' },
       h('div', { class: 'cert-inner' },
-        h('div', { class: 'cert-top' }, pokeImg(25, '⚡', 'cert-poke'), h('div', { class: 'cert-title' }, '생태 마스터 인증서'), pokeImg(151, '✨', 'cert-poke')),
+        h('div', { class: 'cert-top' }, partnerImg('cert-poke'), h('div', { class: 'cert-title' }, '생태 마스터 인증서'), pokeImg(151, '✨', 'cert-poke')),
         h('p', { class: 'cert-name' }, `${save.name || '트레이너'}`),
         h('p', { class: 'cert-body' },
           '위 트레이너는 포켓몬 생태계 탐험대에서 생태계의 구성 요소, 생물의 역할, 먹이그물, 환경오염과 생태계 보전에 대해 열심히 탐구하여 ',
@@ -991,7 +701,7 @@ function renderCertificate() {
         h('p', { class: 'cert-legal' }, '※ 비영리 교육용 팬 게임 · 포켓몬 저작권: Nintendo/Creatures/GAME FREAK/The Pokémon Company'))),
     h('div', { class: 'row-btns no-print' },
       h('button', { class: 'btn primary', onclick: () => window.print() }, '🖨️ 인쇄하기'),
-      h('button', { class: 'btn', onclick: renderMap }, '🗺️ 지도로'))));
+      h('button', { class: 'btn', onclick: () => goTown() }, '🏠 마을로'))));
 }
 
 /* =========================================================
@@ -1222,7 +932,3 @@ function simpleChainHtml() {
   }).join('') + '<div class="mc-cap">단순한 먹이사슬</div></div>';
 }
 
-/* ---------- 시작 ---------- */
-renderTitle();
-
-})();
