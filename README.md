@@ -1,5 +1,7 @@
 # 포켓몬 생태계 탐험대 🌳⚡
 
+> 📦 **인수인계 문서**: 새 Claude 세션에서 이어서 작업할 때는 [`docs/HANDOFF.md`](docs/HANDOFF.md)를 먼저 읽어 주세요.
+
 초등학교 4학년 2학기 과학 **「2. 생물과 환경」** 단원을 포켓몬과 함께 배우는 웹 게임입니다.
 설치 없이 브라우저(크롬북·태블릿·PC)에서 바로 실행됩니다.
 
@@ -128,4 +130,6 @@ js/town.js        걸어 다니는 맵, 야생 생물, 날씨, 파트너, 오염
 js/modes.js       라운드전, 스피드, 대결, 팀전, 기억력 카드
 js/minigames.js   분류 두더지, 먹이사슬 탑, 생태 빙고, OX 퀴즈쇼, 오염 정화 디펜스
 js/main.js        시작
+tests/smoke.js    브라우저 자동 점검 (node tests/smoke.js)
+docs/HANDOFF.md   인수인계 문서
 ```
